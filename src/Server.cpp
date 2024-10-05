@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
         std::string blob_content{std::istreambuf_iterator<char>(blob_input),
                          std::istreambuf_iterator<char>()};
         blob_input.close();
-        std::cout<<blob_content.substr(blob_content.find('\0') + 1)<<'\n';
+        std::cout<<blob_content.substr(blob_content.find('\0') + 1);
     }
     else {
         std::cerr << "Unknown command " << command << '\n';
