@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <zlib.h>
+#include "zstr.hpp"
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -12,6 +14,7 @@ int main(int argc, char *argv[])
 
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     std::cout << "Logs from your program will appear here!\n";
+    std::cout << "argc: " << argc << '\n';
 
     // Uncomment this block to pass the first stage
     
@@ -42,7 +45,34 @@ int main(int argc, char *argv[])
             std::cerr << e.what() << '\n';
             return EXIT_FAILURE;
         }
-    } else {
+    }
+    else if(command=="cat-file"){
+        if (argc<4)
+        {
+            std::cerr<<"Invalid command, required '-p <blob saha>'\n";
+            return EXIT_FAILURE;
+        }
+        const std::string flag=argv[2];
+        if(flag!="-p"){
+            std::cerr<<"Invalid or Absent flag, required '-p <blob sha>'\n";
+            return EXIT_FAILURE;
+        }
+        const std::string value=argv[3];
+        const std::string dir_name= value.substr(0,2);
+        const std::string blob_sha= value.substr(2);
+        const std::string file_address=".git/objects/"+dir_name+"/"+blob_sha;
+
+        zstr:: ifstream blob_input(file_address , std::ofstream::binary);
+        if(!blob_input.is_open()){
+            std::cerr<<"Failed to open file\n";
+            return EXIT_FAILURE;
+        }
+        std::string blob_content{std::istreambuf_iterator<char>(blob_input),
+                         std::istreambuf_iterator<char>()};
+        blob_input.close();
+        std::cout<<blob_content.substr(blob_content.find('\0') + 1)<<'\n';
+    }
+    else {
         std::cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
