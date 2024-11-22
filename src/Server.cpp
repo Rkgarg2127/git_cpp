@@ -8,6 +8,10 @@
 #include <openssl/sha.h>
 using namespace std;
 
+string compressedString(string data);
+bool hashObject(string file);
+std::string sha_file(std::string data);
+
 int main(int argc, char *argv[])
 {
     // Flush after every std::cout / std::cerr
