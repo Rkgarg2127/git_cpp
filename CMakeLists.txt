@@ -1,22 +1,19 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(git-starter-cpp)
-set(CMAKE_CXX_STANDARD 23) # Enable the C++23 standard
+# Define the project and set the C++ standard
+project(git-starter-cpp VERSION 1.0)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Collect source files
 file(GLOB_RECURSE SOURCE_FILES src/*.cpp src/*.hpp)
 
+# Define the executable
 add_executable(git-starter-cpp ${SOURCE_FILES})
 
-# Find OpenSSL
+# Find and link OpenSSL
 find_package(OpenSSL REQUIRED)
+target_link_libraries(git-starter-cpp PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
-# # Add your source files
-# add_executable(git-starter-cpp server.cpp)
-
-# Link OpenSSL to your program
-target_link_libraries(git-starter-cpp OpenSSL::SSL OpenSSL::Crypto)
-
-
+# Link zlib
 target_link_libraries(git-starter-cpp PRIVATE z)
-
