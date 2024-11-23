@@ -18,4 +18,5 @@ find_package(OpenSSL REQUIRED)
 target_link_libraries(git-starter-cpp OpenSSL::SSL OpenSSL::Crypto)
 
 
-target_link_libraries(git -lz)
+target_link_libraries(git-starter-cpp PRIVATE z)
+
