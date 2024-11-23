@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE SOURCE_FILES src/*.cpp src/*.hpp)
 
 # Define the executable
-add_executable(git-starter-cpp ${SOURCE_FILES})
+add_executable(git ${SOURCE_FILES})
 
 # Find and link OpenSSL
 find_package(OpenSSL REQUIRED)
