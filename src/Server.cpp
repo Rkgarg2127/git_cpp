@@ -11,6 +11,7 @@ using namespace std;
 string compressedString(string data);
 bool hashObject(string file);
 std::string sha_file(std::string data);
+std::string generateSHA1(const std::string &input) ;
 
 int main(int argc, char *argv[])
 {
