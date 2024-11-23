@@ -133,6 +133,7 @@ bool hashObject(string file)
 
     string blobContent = "blob " + to_string(data.str().size()) + "\0" + data.str();
     string sha_hash = generateSHA1(blobContent);
+    cout<<sha_hash<<endl;
 
     // compressing content
     string compressedData = compressedString(blobContent);
@@ -146,7 +147,7 @@ bool hashObject(string file)
     {
         if (filesystem::create_directory(dir))
         {
-            cout << "Directory created\n";
+            // cout << "Directory created\n";
         }
         else
         {
@@ -173,20 +174,6 @@ std::string generateSHA1(const std::string &input) {
         oss << std::setw(2) << static_cast<int>(hash[i]);
     }
     return oss.str();
-}
-
-std::string sha_file(std::string data)
-{
-    unsigned char hash[20];
-    SHA1((unsigned char *)data.c_str(), data.size(), hash);
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (const auto &byte : hash)
-    {
-        ss << std::setw(2) << static_cast<int>(byte);
-    }
-    std::cout << ss.str() << std::endl;
-    return ss.str();
 }
 
 string compressedString(string data)
