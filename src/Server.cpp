@@ -131,7 +131,7 @@ bool hashObject(string file)
     stringstream data;
     data << t.rdbuf();
 
-    string blobContent = "blob " + to_string(data.str().size()) + "\0" + data.str();
+    string blobContent = "blob " + to_string(data.str().size()) + '\0' + data.str();
     string sha_hash = generateSHA1(blobContent);
     cout<<sha_hash<<endl;
 
