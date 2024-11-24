@@ -10,8 +10,7 @@ using namespace std;
 
 string compressedString(string data);
 bool hashObject(string file);
-std::string sha_file(std::string data);
-std::string generateSHA1(const std::string &input) ;
+std::string generateSHA1(const std::string &input);
 
 int main(int argc, char *argv[])
 {
@@ -111,12 +110,34 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
     }
+    else if (command == "ls-tree")
+    {
+        if (argc < 4)
+        {
+            std::cerr << "Invalid command, required ' --name-only <tree_sha> '\n";
+            return EXIT_FAILURE;
+        }
+    }
     else
     {
         std::cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
+    const std::string value = argv[3];
+    const std::string dir_name = value.substr(0, 2);
+    const std::string tree_sha = value.substr(2);
+    const std::string file_address = ".git/objects/" + dir_name + "/" + tree_sha;
 
+    zstr::ifstream tree_input(file_address, std::ofstream::binary);
+    if (!tree_input.is_open())
+    {
+        std::cerr << "Failed to open file\n";
+        return EXIT_FAILURE;
+    }
+    std::string tree_content{std::istreambuf_iterator<char>(tree_input),
+                             std::istreambuf_iterator<char>()};
+    tree_input.close();
+    std::cout << tree_content.substr(tree_content.find('\0') + 1);
     return EXIT_SUCCESS;
 }
 
@@ -133,7 +154,7 @@ bool hashObject(string file)
 
     string blobContent = "blob " + to_string(data.str().size()) + '\0' + data.str();
     string sha_hash = generateSHA1(blobContent);
-    cout<<sha_hash<<endl;
+    cout << sha_hash << endl;
 
     // compressing content
     string compressedData = compressedString(blobContent);
@@ -156,21 +177,23 @@ bool hashObject(string file)
         }
     }
 
-    string file_address = dir + "/" +sha_hash.substr(2);
+    string file_address = dir + "/" + sha_hash.substr(2);
     std::ofstream objectFile(file_address, std::ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
     return true;
 }
 
-std::string generateSHA1(const std::string &input) {
+std::string generateSHA1(const std::string &input)
+{
     unsigned char hash[SHA_DIGEST_LENGTH]; // SHA1 hash is 20 bytes
-    SHA1(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), hash);
+    SHA1(reinterpret_cast<const unsigned char *>(input.c_str()), input.size(), hash);
 
     // Convert hash to hexadecimal string
     std::ostringstream oss;
     oss << std::hex << std::setfill('0');
-    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i) {
+    for (int i = 0; i < SHA_DIGEST_LENGTH; ++i)
+    {
         oss << std::setw(2) << static_cast<int>(hash[i]);
     }
     return oss.str();
@@ -191,8 +214,6 @@ string compressedString(string data)
     }
     return compressedData;
 }
-
-
 
 // git add .
 // git commit --allow-empty -m "[any message]"
