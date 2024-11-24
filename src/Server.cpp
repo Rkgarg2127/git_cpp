@@ -137,7 +137,11 @@ int main(int argc, char *argv[])
     std::string tree_content{std::istreambuf_iterator<char>(tree_input),
                              std::istreambuf_iterator<char>()};
     tree_input.close();
-    std::cout << tree_content.substr(tree_content.find('\0') + 1);
+
+    // //Spliting the stream into entries on basis of " "
+    // vector<string> tree_enterires;
+
+    std::cout << tree_content;
     return EXIT_SUCCESS;
 }
 
