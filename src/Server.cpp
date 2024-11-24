@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     // required:- "doo\ndooby\nhumpty\n"
 
     string result = extract_filenames(tree_content);
-    
+    std::cout<<result;
 
     // std::cout << tree_content.substr(tree_content.find('\0') + 1);
     return EXIT_SUCCESS;
