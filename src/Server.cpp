@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
         int pos = entry.find('\0');
         res += entry.substr(0,pos) + '\n';
     }
+    cout << res;
 
     // std::cout << tree_content.substr(tree_content.find('\0') + 1);
     return EXIT_SUCCESS;
