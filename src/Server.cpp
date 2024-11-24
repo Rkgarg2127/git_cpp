@@ -215,6 +215,6 @@ string compressedString(string data)
     return compressedData;
 }
 
-git add .
-git commit --allow-empty -m "[any message]"
-git push origin master
+// git add .
+// git commit --allow-empty -m "[any message]"
+// git push origin master
