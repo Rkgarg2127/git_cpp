@@ -11,6 +11,7 @@ using namespace std;
 string compressedString(string data);
 bool hashObject(string file);
 std::string generateSHA1(const std::string &input);
+std::string extract_filenames(const std::string& tree_content) ;
 
 int main(int argc, char *argv[])
 {
@@ -138,10 +139,13 @@ int main(int argc, char *argv[])
                              std::istreambuf_iterator<char>()};
     tree_input.close();
 
-    // //Spliting the stream into entries on basis of " "
-    // vector<string> tree_enterires;
+    // string Stream example:- "tree 96\x0040000 doo\x00pPC!\xb4\xde>\xf8\x88ܷ\xb6H\x17z,6.\x01\xba40000 dooby\x00赂\xbdd\xd8\xc1)E\x12\xe3H֟d\xb0=@q'100644 humpty\x00ؘ\x9d\x89\xa4/\xcc\xc5r8\x1e\xfb\x9d\x94a\xfe\xf1\x94\xf9~"
+    // required:- "doo\ndooby\nhumpty\n"
 
-    std::cout << tree_content;
+    string result = extract_filenames(tree_content);
+    
+
+    // std::cout << tree_content.substr(tree_content.find('\0') + 1);
     return EXIT_SUCCESS;
 }
 
@@ -217,6 +221,30 @@ string compressedString(string data)
         return "";
     }
     return compressedData;
+}
+
+
+std::string extract_filenames(const std::string& input) {
+    // string Stream example:- "tree 96\x0040000 doo\x00pPC!\xb4\xde>\xf8\x88ܷ\xb6H\x17z,6.\x01\xba40000 dooby\x00赂\xbdd\xd8\xc1)E\x12\xe3H֟d\xb0=@q'100644 humpty\x00ؘ\x9d\x89\xa4/\xcc\xc5r8\x1e\xfb\x9d\x94a\xfe\xf1\x94\xf9~"
+    // output:- "doo\ndooby\nhumpty\n"
+    std::stringstream output;
+    size_t pos = 0;
+
+    while (pos < input.size()) {
+        // Find the next null terminator
+        size_t null_pos = input.find('\0', pos);
+        if (null_pos == std::string::npos) break; // No more entries
+
+        // Skip the file metadata and extract the filename
+        size_t filename_start = pos + 7; // Skip "40000 ", "100644 ", etc.
+        std::string filename = input.substr(pos + 7, null_pos - (pos + 7));
+        output << filename << '\n';
+
+        // Move past the filename and hash (20 bytes of SHA1 hash)
+        pos = null_pos + 21;
+    }
+
+    return output.str();
 }
 
 // git add .
