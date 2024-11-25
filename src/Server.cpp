@@ -9,7 +9,7 @@
 using namespace std;
 
 string compressedString(string data);
-string hashObject(string file);
+string makeBlob(string file);
 std::string generateSHA1(const std::string &input);
 
 int main(int argc, char *argv[])
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
         const std::string value = argv[3];
-        string result = hashObject(value);
+        string result = makeBlob(value);
         if (result == "")
         {
             std::cerr << "Failed to hash object\n";
@@ -161,44 +161,15 @@ int main(int argc, char *argv[])
             std::cerr << "Invalid command, required 'write-tree'\n";
             return EXIT_FAILURE;
         }
-        string tree_content = "";
-        for(int i = 2; i < argc; i++){
-            string value = argv[i];
-            const std::string dir_name = value.substr(0, 2);
-            const std::string tree_sha = value.substr(2);
-            const std::string file_address = ".git/objects/" + dir_name + "/" + tree_sha;
-
-            zstr::ifstream tree_input(file_address, std::ofstream::binary);
-            if (!tree_input.is_open())
-            {
-                std::cerr << "Failed to open file\n";
-                return EXIT_FAILURE;
-            }
-            std::string content{std::istreambuf_iterator<char>(tree_input),
-                                std::istreambuf_iterator<char>()};
-            tree_input.close();
-            tree_content += content;
+        
+        string generartedTreeHash= makeTree(".");
+        if(generartedTreeHash==""){
+            cout<<"Some ERROR";
+            return EXIT_FAILURE;
         }
-        string sha_hash = generateSHA1(tree_content);
-        string dir = ".git/objects/" + sha_hash.substr(0, 2);
-        if (!filesystem::exists(dir))
-        {
-            if (filesystem::create_directory(dir))
-            {
-                // cout << "Directory created\n";
-            }
-            else
-            {
-                cout << "Failed to create directory\n";
-                return EXIT_FAILURE;
-            }
+        else{
+            cout<<generartedTreeHash;
         }
-
-        string file_address = dir + "/" + sha_hash.substr(2);
-        std::ofstream objectFile(file_address, std::ios::binary);
-        objectFile.write(tree_content.c_str(), tree_content.size());
-        objectFile.close();
-        cout << sha_hash << '\n';
     }
     else{
         std::cerr << "Unknown command " << command << '\n';
@@ -206,7 +177,7 @@ int main(int argc, char *argv[])
     }
 }
 
-string hashObject(string file)
+string makeBlob(string file)
 {
     ifstream t(file, ios::in | ios::out | ios::app);
     if (!t.is_open())
@@ -218,13 +189,51 @@ string hashObject(string file)
     data << t.rdbuf();
 
     string blobContent = "blob " + to_string(data.str().size()) + '\0' + data.str();
-    string sha_hash = generateSHA1(blobContent);
-    // cout << sha_hash << endl;
+    
+    string sha_hash = makeCompressedObject(blobContent);
+    return sha_hash;
+}
+
+string makeTree(string directoryAddress){
+    if (!filesystem::exists(directoryAddress) || !filesystem::is_directory(directoryAddress)) {
+        std::cerr << "Directory:"+directoryAddress+" does not exist or is not accessible!" << std::endl;
+        return "";
+    } 
+
+    string treeContent="";
+    int fileCount=0;
+    for (const auto& entry : filesystem::directory_iterator(directoryAddress)) {
+        fileCount++;
+        if(filesystem::is_directory(entry.path())){
+            string subTreeHash=makeTree(entry.path().string());
+            if(subTreeHash==""){
+                string hjnhhl="created by ram";
+            }
+            treeContent+="40000 "+entry.path().filename().string()+"\0"+subTreeHash;
+        }
+        else{
+            string fileHash=makeBlob(entry.path().string());
+            if(fileHash==""){
+                string hjnhhl="created by ram";
+            }
+            treeContent+="100644 "+entry.path().filename().string()+"\0"+fileHash;
+        }
+    }
+    treeContent="tree "+to_string(treeContent.size())+'\0'+treeContent;
+    string sha_hash = makeCompressedObject(treeContent);
+    return sha_hash;
+
+}
+
+string makeCompressedObject(string input){
+
+    string sha_hash = generateSHA1(input);
 
     // compressing content
-    string compressedData = compressedString(blobContent);
+    string compressedData = compressedString(input);
     if (compressedData == "")
     {
+        cout<<"empty compressedData";
         return "";
     }
 
@@ -277,6 +286,7 @@ string compressedString(string data)
         std::cerr << "Compression failed\n";
         return "";
     }
+    compressedData.resize(compressedSize);
     return compressedData;
 }
 
