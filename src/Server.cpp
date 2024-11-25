@@ -6,6 +6,7 @@
 #include "zstr.hpp"
 #include <iomanip>
 #include <openssl/sha.h>
+#include <algorithm>
 using namespace std;
 
 string compressedString(string data);
@@ -13,6 +14,7 @@ string makeBlob(string file);
 std::string generateSHA1(const std::string &input);
 string makeTree(string directoryAddress);
 string makeCompressedObject(string input);
+std::string fromHex(const std::string& hexStr) ;
 
 int main(int argc, char *argv[])
 {
@@ -111,6 +113,7 @@ int main(int argc, char *argv[])
             std::cerr << "Failed to hash object\n";
             return EXIT_FAILURE;
         }
+        cout<<result;
     }
     else if (command == "ls-tree")
     {
@@ -157,23 +160,27 @@ int main(int argc, char *argv[])
         // std::cout << tree_content.substr(tree_content.find('\0') + 1);
         return EXIT_SUCCESS;
     }
-    else if(command == "write-tree"){
+    else if (command == "write-tree")
+    {
         if (argc < 2)
         {
             std::cerr << "Invalid command, required 'write-tree'\n";
             return EXIT_FAILURE;
         }
-        
-        string generartedTreeHash= makeTree(".");
-        if(generartedTreeHash==""){
-            cout<<"Some ERROR";
+
+        string generartedTreeHash = makeTree(".");
+        if (generartedTreeHash == "")
+        {
+            cout << "Some ERROR";
             return EXIT_FAILURE;
         }
-        else{
-            cout<<generartedTreeHash;
+        else
+        {
+            cout << generartedTreeHash;
         }
     }
-    else{
+    else
+    {
         std::cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
@@ -191,43 +198,67 @@ string makeBlob(string file)
     data << t.rdbuf();
 
     string blobContent = "blob " + to_string(data.str().size()) + '\0' + data.str();
-    
+
     string sha_hash = makeCompressedObject(blobContent);
     return sha_hash;
 }
 
-string makeTree(string directoryAddress){
-    if (!filesystem::exists(directoryAddress) || !filesystem::is_directory(directoryAddress)) {
-        std::cerr << "Directory:"+directoryAddress+" does not exist or is not accessible!" << std::endl;
+string makeTree(string directoryAddress)
+{
+    if (!filesystem::exists(directoryAddress) || !filesystem::is_directory(directoryAddress))
+    {
+        std::cerr << "Directory:" + directoryAddress + " does not exist or is not accessible!" << std::endl;
         return "";
-    } 
-
-    string treeContent="";
-    int fileCount=0;
-    for (const auto& entry : filesystem::directory_iterator(directoryAddress)) {
-        fileCount++;
-        if(filesystem::is_directory(entry.path())){
-            string subTreeHash=makeTree(entry.path().string());
-            if(subTreeHash==""){
-                string hjnhhl="created by ram";
-            }
-            treeContent+="40000 "+entry.path().filename().string()+"\0"+subTreeHash;
-        }
-        else{
-            string fileHash=makeBlob(entry.path().string());
-            if(fileHash==""){
-                string hjnhhl="created by ram";
-            }
-            treeContent+="100644 "+entry.path().filename().string()+"\0"+fileHash;
-        }
     }
-    treeContent="tree "+to_string(treeContent.size())+'\0'+treeContent;
+
+    vector<pair<string, pair<string, string>>> files;
+    string treeContent = "";
+    int fileCount = 0;
+    for (const auto &entry : filesystem::directory_iterator(directoryAddress))
+    {
+        fileCount++;
+        string fileName = entry.path().filename().string();
+        string subHash;
+        string fileMode;
+        if (fileName == ".git" || fileName.front() == '.')
+        {
+            continue;
+        }
+        else if (filesystem::is_directory(entry.path()))
+        {
+            subHash = makeTree(entry.path().string());
+            fileMode = "40000";
+        }
+        else
+        {
+            subHash = makeBlob(entry.path().string());
+            fileMode = "100644";
+        }
+        if (subHash == "")
+        {
+            cout << "Some ERROR";
+            return "";
+        }
+        string hexSubHash = fromHex(subHash);
+        files.push_back({fileName, {fileMode, hexSubHash}});
+    }
+
+    sort(files.begin(), files.end());
+    for (int i = 0; i < files.size(); i++)
+    {
+        // printf("%s %s %s\n", files[i].second.first.c_str(), files[i].first.c_str(), files[i].second.second.c_str());
+        treeContent += files[i].second.first + " " + files[i].first + '\0' + files[i].second.second;
+    }
+
+
+    treeContent = "tree " + to_string(treeContent.size()) + '\0' + treeContent;
+    // cout<<treeContent<<endl<<endl;
     string sha_hash = makeCompressedObject(treeContent);
     return sha_hash;
-
 }
 
-string makeCompressedObject(string input){
+string makeCompressedObject(string input)
+{
 
     string sha_hash = generateSHA1(input);
 
@@ -235,7 +266,7 @@ string makeCompressedObject(string input){
     string compressedData = compressedString(input);
     if (compressedData == "")
     {
-        cout<<"empty compressedData";
+        cout << "empty compressedData";
         return "";
     }
 
@@ -291,6 +322,17 @@ string compressedString(string data)
     compressedData.resize(compressedSize);
     return compressedData;
 }
+
+std::string fromHex(const std::string& hexStr) {
+    std::string result;
+    for (size_t i = 0; i < hexStr.length(); i += 2) {
+        std::string byteStr = hexStr.substr(i, 2);
+        char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
+        result += byte;
+    }
+    return result;
+}
+
 
 // git add .
 // git commit --allow-empty -m "[any message]"
