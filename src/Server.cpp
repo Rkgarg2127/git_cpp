@@ -11,6 +11,8 @@ using namespace std;
 string compressedString(string data);
 string makeBlob(string file);
 std::string generateSHA1(const std::string &input);
+string makeTree(string directoryAddress);
+string makeCompressedObject(string input);
 
 int main(int argc, char *argv[])
 {
