@@ -9,7 +9,7 @@
 using namespace std;
 
 string compressedString(string data);
-bool hashObject(string file);
+string hashObject(string file);
 std::string generateSHA1(const std::string &input);
 
 int main(int argc, char *argv[])
@@ -103,8 +103,8 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
         const std::string value = argv[3];
-        bool result = hashObject(value);
-        if (!result)
+        string result = hashObject(value);
+        if (result == "")
         {
             std::cerr << "Failed to hash object\n";
             return EXIT_FAILURE;
@@ -155,33 +155,77 @@ int main(int argc, char *argv[])
         // std::cout << tree_content.substr(tree_content.find('\0') + 1);
         return EXIT_SUCCESS;
     }
-    else
-    {
+    else if(command == "write-tree"){
+        if (argc < 2)
+        {
+            std::cerr << "Invalid command, required 'write-tree'\n";
+            return EXIT_FAILURE;
+        }
+        string tree_content = "";
+        for(int i = 2; i < argc; i++){
+            string value = argv[i];
+            const std::string dir_name = value.substr(0, 2);
+            const std::string tree_sha = value.substr(2);
+            const std::string file_address = ".git/objects/" + dir_name + "/" + tree_sha;
+
+            zstr::ifstream tree_input(file_address, std::ofstream::binary);
+            if (!tree_input.is_open())
+            {
+                std::cerr << "Failed to open file\n";
+                return EXIT_FAILURE;
+            }
+            std::string content{std::istreambuf_iterator<char>(tree_input),
+                                std::istreambuf_iterator<char>()};
+            tree_input.close();
+            tree_content += content;
+        }
+        string sha_hash = generateSHA1(tree_content);
+        string dir = ".git/objects/" + sha_hash.substr(0, 2);
+        if (!filesystem::exists(dir))
+        {
+            if (filesystem::create_directory(dir))
+            {
+                // cout << "Directory created\n";
+            }
+            else
+            {
+                cout << "Failed to create directory\n";
+                return EXIT_FAILURE;
+            }
+        }
+
+        string file_address = dir + "/" + sha_hash.substr(2);
+        std::ofstream objectFile(file_address, std::ios::binary);
+        objectFile.write(tree_content.c_str(), tree_content.size());
+        objectFile.close();
+        cout << sha_hash << '\n';
+    }
+    else{
         std::cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
 }
 
-bool hashObject(string file)
+string hashObject(string file)
 {
     ifstream t(file, ios::in | ios::out | ios::app);
     if (!t.is_open())
     {
         cout << "Problem in opening " << file << " during make hash object.\n";
-        return false;
+        return "";
     }
     stringstream data;
     data << t.rdbuf();
 
     string blobContent = "blob " + to_string(data.str().size()) + '\0' + data.str();
     string sha_hash = generateSHA1(blobContent);
-    cout << sha_hash << endl;
+    // cout << sha_hash << endl;
 
     // compressing content
     string compressedData = compressedString(blobContent);
     if (compressedData == "")
     {
-        return false;
+        return "";
     }
 
     string dir = ".git/objects/" + sha_hash.substr(0, 2);
@@ -194,7 +238,7 @@ bool hashObject(string file)
         else
         {
             cout << "Failed to create directory\n";
-            return false;
+            return "";
         }
     }
 
@@ -202,7 +246,7 @@ bool hashObject(string file)
     std::ofstream objectFile(file_address, std::ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
-    return true;
+    return sha_hash;
 }
 
 std::string generateSHA1(const std::string &input)
