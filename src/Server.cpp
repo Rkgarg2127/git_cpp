@@ -1,20 +1,24 @@
-#include <iostream>
 #include <filesystem>
 #include <fstream>
-#include <string>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <zlib.h>
 #include "zstr.hpp"
-#include <iomanip>
-#include <openssl/sha.h>
+#include <chrono>
+#include <ctime>
 #include <algorithm>
+#include <string>
+#include <openssl/sha.h>
 using namespace std;
 
-string compressedString(string data);
 string makeBlob(string file);
-std::string generateSHA1(const std::string &input);
 string makeTree(string directoryAddress);
 string makeCompressedObject(string input);
-std::string fromHex(const std::string& hexStr) ;
+string compressedString(string data);
+string generateSHA1(const std::string &input);
+string fromHex(const std::string &hexStr);
+string getFormattedTimestamp();
 
 int main(int argc, char *argv[])
 {
@@ -113,7 +117,7 @@ int main(int argc, char *argv[])
             std::cerr << "Failed to hash object\n";
             return EXIT_FAILURE;
         }
-        cout<<result;
+        cout << result;
     }
     else if (command == "ls-tree")
     {
@@ -177,6 +181,56 @@ int main(int argc, char *argv[])
         else
         {
             cout << generartedTreeHash;
+        }
+    }
+    else if (command == "commit-tree")
+    {
+        // creating commmit object
+        if (argc < 7)
+        {
+            // Invalid input Required :  ./your_program.sh commit-tree <tree_sha> -p <commit_sha> -m <message>
+            cout << "INvalid command.\n REquired:  ./your_program.sh commit-tree <tree_sha> -p <commit_sha> -m <message>\n";
+        }
+
+        // Taking hardcoded user data
+        string author_name = "Ram Kinkar", author_email = "rkgarg15042005@gmail.com";
+        string commiter_name = "Ram Kinkar", commiter_email = "rkgarg15042005@gmail.com";
+        string timestamp = getFormattedTimestamp();
+
+        string tree_sha = argv[2];
+        string parent_sha = argv[4];
+        string message = argv[6];
+
+        // Computing commit Content
+
+        string commitData = "tree " + tree_sha + '\n';
+        if (!parent_sha.empty())
+        {
+            commitData += "parent " + parent_sha + '\n';
+        }
+        commitData += "author " + author_name + " <" + author_email + "> " + timestamp + "\n";
+        commitData += "committer " + commiter_name + " <" + commiter_email + "> " + timestamp + "\n";
+        commitData += "\n" + message+"\n";
+
+        // Example of Commit Data:-
+        // // tree d8329fc1cc938780ffdd9f94e0d364e0ea74f579
+        // // author Scott Chacon <schacon@gmail.com> 1243040974 -0700
+        // // committer Scott Chacon <schacon@gmail.com> 1243040974 -0700
+        // //
+        // // First commit
+
+        // cout<<commitData<<endl<<endl;
+
+        commitData = "commit " + to_string(commitData.size()) + '\0' + commitData;
+        string commitSha = makeCompressedObject(commitData);
+        if (commitSha == "")
+        {
+            cout << "Some ERROR";
+            return EXIT_FAILURE;
+        }
+        else
+        {
+            cout << commitSha;
         }
     }
     else
@@ -250,7 +304,6 @@ string makeTree(string directoryAddress)
         treeContent += files[i].second.first + " " + files[i].first + '\0' + files[i].second.second;
     }
 
-
     treeContent = "tree " + to_string(treeContent.size()) + '\0' + treeContent;
     // cout<<treeContent<<endl<<endl;
     string sha_hash = makeCompressedObject(treeContent);
@@ -285,13 +338,13 @@ string makeCompressedObject(string input)
     }
 
     string file_address = dir + "/" + sha_hash.substr(2);
-    std::ofstream objectFile(file_address, std::ios::binary);
+    ofstream objectFile(file_address, ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
     return sha_hash;
 }
 
-std::string generateSHA1(const std::string &input)
+string generateSHA1(const std::string &input)
 {
     unsigned char hash[SHA_DIGEST_LENGTH]; // SHA1 hash is 20 bytes
     SHA1(reinterpret_cast<const unsigned char *>(input.c_str()), input.size(), hash);
@@ -323,9 +376,11 @@ string compressedString(string data)
     return compressedData;
 }
 
-std::string fromHex(const std::string& hexStr) {
+string fromHex(const std::string &hexStr)
+{
     std::string result;
-    for (size_t i = 0; i < hexStr.length(); i += 2) {
+    for (size_t i = 0; i < hexStr.length(); i += 2)
+    {
         std::string byteStr = hexStr.substr(i, 2);
         char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
         result += byte;
@@ -333,6 +388,33 @@ std::string fromHex(const std::string& hexStr) {
     return result;
 }
 
+string getFormattedTimestamp()
+{
+    // Get the current time
+    auto now = std::chrono::system_clock::now();
+    std::time_t unix_timestamp = std::chrono::system_clock::to_time_t(now);
+
+    // Get the local timezone offset in seconds
+    std::tm local_tm = *std::localtime(&unix_timestamp);
+    std::tm utc_tm = *std::gmtime(&unix_timestamp);
+    int offset_seconds = std::difftime(std::mktime(&local_tm), std::mktime(&utc_tm));
+
+    // Calculate the offset in hours and minutes
+    int offset_hours = offset_seconds / 3600;
+    int offset_minutes = std::abs(offset_seconds % 3600 / 60);
+
+    // Format the timezone offset
+    std::ostringstream offset_stream;
+    offset_stream << (offset_hours >= 0 ? "+" : "-")                             // Sign
+                  << std::setw(2) << std::setfill('0') << std::abs(offset_hours) // Hours
+                  << std::setw(2) << std::setfill('0') << offset_minutes;        // Minutes
+
+    // Combine Unix timestamp and timezone offset
+    std::ostringstream formatted_timestamp;
+    formatted_timestamp << unix_timestamp << " " << offset_stream.str();
+
+    return formatted_timestamp.str();
+}
 
 // git add .
 // git commit --allow-empty -m "[any message]"
