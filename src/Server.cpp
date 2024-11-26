@@ -34,21 +34,21 @@ int main(int argc, char *argv[])
 
     if (argc < 2)
     {
-        std::cerr << "No command provided.\n";
+        cerr << "No command provided.\n";
         return EXIT_FAILURE;
     }
 
-    std::string command = argv[1];
+    string command = argv[1];
 
     if (command == "init")
     {
         try
         {
-            std::filesystem::create_directory(".git");
-            std::filesystem::create_directory(".git/objects");
-            std::filesystem::create_directory(".git/refs");
+            filesystem::create_directory(".git");
+            filesystem::create_directory(".git/objects");
+            filesystem::create_directory(".git/refs");
 
-            std::ofstream headFile(".git/HEAD");
+            ofstream headFile(".git/HEAD");
             if (headFile.is_open())
             {
                 headFile << "ref: refs/heads/main\n";
@@ -56,15 +56,15 @@ int main(int argc, char *argv[])
             }
             else
             {
-                std::cerr << "Failed to create .git/HEAD file.\n";
+                cerr << "Failed to create .git/HEAD file.\n";
                 return EXIT_FAILURE;
             }
 
-            std::cout << "Initialized git directory\n";
+            cout << "Initialized git directory\n";
         }
         catch (const std::filesystem::filesystem_error &e)
         {
-            std::cerr << e.what() << '\n';
+            cerr << e.what() << '\n';
             return EXIT_FAILURE;
         }
     }
@@ -72,49 +72,49 @@ int main(int argc, char *argv[])
     {
         if (argc < 4)
         {
-            std::cerr << "Invalid command, required '-p <blob saha>'\n";
+            cerr << "Invalid command, required '-p <blob saha>'\n";
             return EXIT_FAILURE;
         }
-        const std::string flag = argv[2];
+        const string flag = argv[2];
         if (flag != "-p")
         {
-            std::cerr << "Invalid or Absent flag, required '-p <blob sha>'\n";
+            cerr << "Invalid or Absent flag, required '-p <blob sha>'\n";
             return EXIT_FAILURE;
         }
-        const std::string value = argv[3];
-        const std::string dir_name = value.substr(0, 2);
-        const std::string blob_sha = value.substr(2);
-        const std::string file_address = ".git/objects/" + dir_name + "/" + blob_sha;
+        const string value = argv[3];
+        const string dir_name = value.substr(0, 2);
+        const string blob_sha = value.substr(2);
+        const string file_address = ".git/objects/" + dir_name + "/" + blob_sha;
 
-        zstr::ifstream blob_input(file_address, std::ofstream::binary);
+        zstr::ifstream blob_input(file_address, ofstream::binary);
         if (!blob_input.is_open())
         {
-            std::cerr << "Failed to open file\n";
+            cerr << "Failed to open file\n";
             return EXIT_FAILURE;
         }
-        std::string blob_content{std::istreambuf_iterator<char>(blob_input),
-                                 std::istreambuf_iterator<char>()};
+        string blob_content{istreambuf_iterator<char>(blob_input),
+                                 istreambuf_iterator<char>()};
         blob_input.close();
-        std::cout << blob_content.substr(blob_content.find('\0') + 1);
+        cout << blob_content.substr(blob_content.find('\0') + 1);
     }
     else if (command == "hash-object")
     {
         if (argc < 4)
         {
-            std::cerr << "Invalid command, required '-w <file address>'\n";
+        cerr << "Invalid command, required '-w <file address>'\n";
             return EXIT_FAILURE;
         }
-        const std::string flag = argv[2];
+        const string flag = argv[2];
         if (flag != "-w")
         {
-            std::cerr << "Invalid or Absent flag, required '-w <file address>'\n";
+            cerr << "Invalid or Absent flag, required '-w <file address>'\n";
             return EXIT_FAILURE;
         }
-        const std::string value = argv[3];
+        const string value = argv[3];
         string result = makeBlob(value);
         if (result == "")
         {
-            std::cerr << "Failed to hash object\n";
+            cerr << "Failed to hash object\n";
             return EXIT_FAILURE;
         }
         cout << result;
@@ -123,22 +123,22 @@ int main(int argc, char *argv[])
     {
         if (argc < 4)
         {
-            std::cerr << "Invalid command, required ' --name-only <tree_sha> '\n";
+            cerr << "Invalid command, required ' --name-only <tree_sha> '\n";
             return EXIT_FAILURE;
         }
-        const std::string value = argv[3];
-        const std::string dir_name = value.substr(0, 2);
-        const std::string tree_sha = value.substr(2);
-        const std::string file_address = ".git/objects/" + dir_name + "/" + tree_sha;
+        const string value = argv[3];
+        const string dir_name = value.substr(0, 2);
+        const string tree_sha = value.substr(2);
+        const string file_address = ".git/objects/" + dir_name + "/" + tree_sha;
 
-        zstr::ifstream tree_input(file_address, std::ofstream::binary);
+        zstr::ifstream tree_input(file_address, ofstream::binary);
         if (!tree_input.is_open())
         {
             std::cerr << "Failed to open file\n";
             return EXIT_FAILURE;
         }
-        std::string tree_content{std::istreambuf_iterator<char>(tree_input),
-                                 std::istreambuf_iterator<char>()};
+        string tree_content{istreambuf_iterator<char>(tree_input),
+                                 istreambuf_iterator<char>()};
         tree_input.close();
 
         // string Stream example:- "tree 96\x0040000 doo\x00pPC!\xb4\xde>\xf8\x88ܷ\xb6H\x17z,6.\x01\xba40000 dooby\x00赂\xbdd\xd8\xc1)E\x12\xe3H֟d\xb0=@q'100644 humpty\x00ؘ\x9d\x89\xa4/\xcc\xc5r8\x1e\xfb\x9d\x94a\xfe\xf1\x94\xf9~"
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
         // Spliting the stream into entries on basis of " "
         vector<string> tree_enterires;
-        std::string line;
+        string line;
         stringstream ss(tree_content);
         while (getline(ss, line, ' '))
         {
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
     {
         if (argc < 2)
         {
-            std::cerr << "Invalid command, required 'write-tree'\n";
+            cerr << "Invalid command, required 'write-tree'\n";
             return EXIT_FAILURE;
         }
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cerr << "Unknown command " << command << '\n';
+        cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
 }
