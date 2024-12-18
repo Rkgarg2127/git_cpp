@@ -259,8 +259,22 @@ bool gitClone(string repo_url, string directory_name)
                 lines.push_back(line); // Store each line in the vector
             }
 
-            // Extract the HEAD reference
-            
+            // To do some response check conditions
+            // // Clients MUST validate the first five bytes of the response entity matches the regex ^[0-9a-f]{4}#. If this test fails, clients MUST NOT continue.
+            // // Clients MUST parse the entire response as a sequence of pkt-line records.
+            // // Clients MUST verify the first pkt-line is # service=$servicename. Servers MUST set $servicename to be the request parameter value. Servers SHOULD include an LF at the end of this line. Clients MUST ignore an LF at the end of the line.
+            // // Servers MUST terminate the response with the magic 0000 end pkt-line marker.
+
+
+            // MAking a request to get the pack file
+
+            // Making the post request data
+            string postData;
+            for(int i=2 ;i< lines.size()-1;i++){
+                postData += "00032want "+ lines[i].substr(0,40) + "\n";
+            }
+            postData += "0000";
+            cout<<postData<<endl;
 
 
         }
