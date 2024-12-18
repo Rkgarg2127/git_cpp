@@ -241,15 +241,18 @@ bool gitClone(string repo_url, string directory_name)
         if (res != CURLE_OK)
         {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            // Cleanup
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            return false;
         }
-        else
-        {
+        
             cout << readBuffer << endl;
-//             Expected Response data: 001e# service=git-upload-pack
-//             0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
-//             003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
+            //             Expected Response data: 001e# service=git-upload-pack
+            //             0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
+            //             003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
 
-            //splinting the response into lines
+            // splinting the response into lines
             std::istringstream stream(readBuffer);
             std::string line;
             std::vector<std::string> lines;
@@ -258,6 +261,7 @@ bool gitClone(string repo_url, string directory_name)
             {
                 lines.push_back(line); // Store each line in the vector
             }
+            curl_easy_reset(curl);
 
             // To do some response check conditions
             // // Clients MUST validate the first five bytes of the response entity matches the regex ^[0-9a-f]{4}#. If this test fails, clients MUST NOT continue.
@@ -265,19 +269,33 @@ bool gitClone(string repo_url, string directory_name)
             // // Clients MUST verify the first pkt-line is # service=$servicename. Servers MUST set $servicename to be the request parameter value. Servers SHOULD include an LF at the end of this line. Clients MUST ignore an LF at the end of the line.
             // // Servers MUST terminate the response with the magic 0000 end pkt-line marker.
 
-
             // MAking a request to get the pack file
+            // fetch git-upload-pack
+            string pack; // to store the pack data
 
             // Making the post request data
             string postData;
-            for(int i=2 ;i< lines.size()-1;i++){
-                postData += "00032want "+ lines[i].substr(0,40) + "\n";
+            for (int i = 2; i < lines.size() - 1; i++)
+            {
+                postData += "00032want " + lines[i].substr(0, 40) + "\n";
             }
             postData += "0000";
-            cout<<postData<<endl;
+            cout << postData << endl;
 
-
-        }
+            // Set the URL for the request
+            curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
+            // Set the request method to POST
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+            // Set the POST data
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
+            // Set the callback function to handle the response
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+            // Set the response data
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &pack);
+            // Perform the request
+            res = curl_easy_perform(curl);
+            cout<<"pack"<<pack<<endl;
+        
         // Cleanup
         curl_easy_cleanup(curl);
     }
