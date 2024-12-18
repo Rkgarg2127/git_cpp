@@ -272,6 +272,7 @@ bool init(string dir)
     {
         
         // cout<<"kjhjjkjlukl"<<endl;
+        filesystem::create_directory(dir);
         filesystem::create_directory(dir + "/.git");
         filesystem::create_directory(dir + "/.git/objects");
         filesystem::create_directory(dir + "/.git/refs");
