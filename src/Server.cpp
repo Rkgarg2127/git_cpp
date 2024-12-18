@@ -280,7 +280,7 @@ bool gitClone(string repo_url, string directory_name)
             postData += "00032want " + lines[i].substr(0, 40) + "\n";
         }
         postData += "00000009done\n";
-        cout << postData << endl;
+        cout <<"postData:"<< postData << endl;
 
         // Set the URL for the request
         curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
@@ -292,6 +292,10 @@ bool gitClone(string repo_url, string directory_name)
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         // Set the response data
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &pack);
+        // Set the headers
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/x-git-upload-pack-request");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         // Perform the request
         res = curl_easy_perform(curl);
         cout << "pack" << pack << endl;
