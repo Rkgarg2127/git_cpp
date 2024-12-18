@@ -14,13 +14,18 @@
 #include <curl/easy.h>
 using namespace std;
 
+bool init(string dir);
+string readBlob(string file_address);
+string readTree(string file_address);
 string makeBlob(string file);
 string makeTree(string directoryAddress);
 string makeCompressedObject(string input);
+bool gitClone(string repo_url, string directory_name);
 string compressedString(string data);
 string generateSHA1(const std::string &input);
 string fromHex(const std::string &hexStr);
 string getFormattedTimestamp();
+size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp);
 
 int main(int argc, char *argv[])
 {
