@@ -26,6 +26,19 @@ string generateSHA1(const std::string &input);
 string fromHex(const std::string &hexStr);
 string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
+size_t write_callback(void* received_data, size_t element_size, size_t num_element, void* userdata) {
+    size_t total_size = element_size * num_element;
+    std::string received_text((char*) received_data, num_element);
+    std::string* master_hash = (std::string*) userdata;
+    if (received_text.find("service=git-upload-pack") == std::string::npos) {
+        size_t hash_pos = received_text.find("refs/heads/master\n");
+        if (hash_pos != std::string::npos) {
+            *master_hash = received_text.substr(hash_pos - 41, 40);
+        }
+    }
+    return total_size;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -231,7 +244,7 @@ bool gitClone(string repo_url, string directory_name)
         curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/info/refs?service=git-upload-pack").c_str());
 
         // Set the callback function to handle the response
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
         // Perform the request
@@ -281,13 +294,14 @@ bool gitClone(string repo_url, string directory_name)
         }
         postData += "00000009done\n";
         cout <<"postData:"<< postData << endl;
-
+         std::string postdata = "0032want " + readBuffer + "\n" +
+                               "00000009done\n";
         // Set the URL for the request
         curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
         // Set the request method to POST
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         // Set the POST data
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
         // Set the callback function to handle the response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         // Set the response data
@@ -298,6 +312,14 @@ bool gitClone(string repo_url, string directory_name)
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         // Perform the request
         res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+        {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            return false;
+        }
         cout << "pack" << pack << endl;
 
         // Cleanup
