@@ -260,10 +260,10 @@ bool init(string dir)
 {
     try
     {
+        cout<<"kjhjjkjlukl"<<endl;
         filesystem::create_directory(dir + "/.git");
         filesystem::create_directory(dir + "/.git/objects");
         filesystem::create_directory(dir + "/.git/refs");
-        cout<<"kjhjjkjlukl"<<endl;
         ofstream headFile(dir + "/.git/HEAD");
         if (headFile.is_open())
         {
