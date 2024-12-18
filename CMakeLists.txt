@@ -15,5 +15,12 @@ add_executable(git ${SOURCE_FILES})
 find_package(OpenSSL REQUIRED)
 target_link_libraries(git PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 
+
+# Add the libcurl library
+find_package(CURL REQUIRED)
+# Link libcurl to your project
+target_link_libraries(git Private CURL::libcurl)
+
 # Link zlib
 target_link_libraries(git PRIVATE z)
+

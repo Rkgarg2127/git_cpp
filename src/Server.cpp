@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <string>
 #include <openssl/sha.h>
+#include <curl/curl.h>
+#include <curl/easy.h>
 using namespace std;
 
 string makeBlob(string file);
@@ -42,29 +44,13 @@ int main(int argc, char *argv[])
 
     if (command == "init")
     {
-        try
+        if(init("."))
         {
-            filesystem::create_directory(".git");
-            filesystem::create_directory(".git/objects");
-            filesystem::create_directory(".git/refs");
-
-            ofstream headFile(".git/HEAD");
-            if (headFile.is_open())
-            {
-                headFile << "ref: refs/heads/main\n";
-                headFile.close();
-            }
-            else
-            {
-                cerr << "Failed to create .git/HEAD file.\n";
-                return EXIT_FAILURE;
-            }
-
             cout << "Initialized git directory\n";
         }
-        catch (const std::filesystem::filesystem_error &e)
+        else
         {
-            cerr << e.what() << '\n';
+            cerr << "Failed to initialize git directory\n";
             return EXIT_FAILURE;
         }
     }
@@ -86,16 +72,8 @@ int main(int argc, char *argv[])
         const string blob_sha = value.substr(2);
         const string file_address = ".git/objects/" + dir_name + "/" + blob_sha;
 
-        zstr::ifstream blob_input(file_address, ofstream::binary);
-        if (!blob_input.is_open())
-        {
-            cerr << "Failed to open file\n";
-            return EXIT_FAILURE;
-        }
-        string blob_content{istreambuf_iterator<char>(blob_input),
-                                 istreambuf_iterator<char>()};
-        blob_input.close();
-        cout << blob_content.substr(blob_content.find('\0') + 1);
+        string result = readBlob(file_address);
+        cout << result;
     }
     else if (command == "hash-object")
     {
@@ -131,38 +109,11 @@ int main(int argc, char *argv[])
         const string tree_sha = value.substr(2);
         const string file_address = ".git/objects/" + dir_name + "/" + tree_sha;
 
-        zstr::ifstream tree_input(file_address, ofstream::binary);
-        if (!tree_input.is_open())
-        {
-            std::cerr << "Failed to open file\n";
-            return EXIT_FAILURE;
-        }
-        string tree_content{istreambuf_iterator<char>(tree_input),
-                                 istreambuf_iterator<char>()};
-        tree_input.close();
-
-        // string Stream example:- "tree 96\x0040000 doo\x00pPC!\xb4\xde>\xf8\x88ܷ\xb6H\x17z,6.\x01\xba40000 dooby\x00赂\xbdd\xd8\xc1)E\x12\xe3H֟d\xb0=@q'100644 humpty\x00ؘ\x9d\x89\xa4/\xcc\xc5r8\x1e\xfb\x9d\x94a\xfe\xf1\x94\xf9~"
-        // required:- "doo\ndooby\nhumpty\n"
-
-        // Spliting the stream into entries on basis of " "
-        vector<string> tree_enterires;
-        string line;
-        stringstream ss(tree_content);
-        while (getline(ss, line, ' '))
-        {
-            tree_enterires.push_back(line);
-        }
-        string res;
-        for (int i = 2; i < tree_enterires.size(); i++)
-        {
-            string entry = tree_enterires[i];
-            int pos = entry.find('\0');
-            res += entry.substr(0, pos) + '\n';
-        }
-        cout << res;
+        string result = readTree(file_address);
+        cout<<result; 
 
         // std::cout << tree_content.substr(tree_content.find('\0') + 1);
-        return EXIT_SUCCESS;
+        
     }
     else if (command == "write-tree")
     {
@@ -233,11 +184,152 @@ int main(int argc, char *argv[])
             cout << commitSha;
         }
     }
+    else if (command == "clone"){
+        //handling wromng input
+        if(argc<4){
+            cout<< "Invalid input Required :  ./your_program.sh clone <repo_url> <dir_name>\n";
+            return EXIT_FAILURE;
+        }
+        string repo_url = argv[2];
+        string directory_name= argv[3];
+        // calling git clone function 
+        if(gitClone(repo_url,directory_name)){
+            cout<<"Cloned Successfully\n";
+        }
+        else{
+            cout<<"Failed to clone\n";
+        }
+    }
     else
     {
         cerr << "Unknown command " << command << '\n';
         return EXIT_FAILURE;
     }
+}
+
+//function to clone a given directory from given name
+bool gitClone(string repo_url, string directory_name){
+    //creating a directory for the repo
+    if(!init(directory_name)){
+        cerr<<"Failed to initialize git directory\n";
+        return EXIT_FAILURE;
+    }
+
+    CURL* curl;
+    CURLcode res;
+
+    // Initialize libcurl
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if(curl) {
+        std::string readBuffer;
+
+        // Set the URL for the request
+        curl_easy_setopt(curl, CURLOPT_URL, repo_url.c_str());
+
+        // Set the callback function to handle the response
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+        // Perform the request
+        res = curl_easy_perform(curl);
+
+        // Check if the request was successful
+        if(res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        } else {
+            std::cout << "Response data: " << readBuffer << std::endl;
+        }
+
+        // Cleanup
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+
+}
+
+size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+//create a git with specified name
+bool init(string dir)
+{
+    try
+    {
+        filesystem::create_directory(dir + "/.git");
+        filesystem::create_directory(dir + "/.git/objects");
+        filesystem::create_directory(dir + "/.git/refs");
+        ofstream headFile(dir + "/.git/HEAD");
+        if (headFile.is_open())
+        {
+            headFile << "ref: refs/heads/master\n";
+            headFile.close();
+        }
+        else
+        {
+            cerr << "Failed to create .git/HEAD file.\n";
+            return false;
+        }
+
+        return true;
+    }
+    catch (const filesystem::filesystem_error &e)
+    {
+        cerr << e.what() << '\n';
+        return false;
+    }
+}
+
+string readBlob(string file_address){
+
+        zstr::ifstream blob_input(file_address, ofstream::binary);
+        if (!blob_input.is_open())
+        {
+            cerr << "Failed to open file\n";
+            return "";
+        }
+        string blob_content{istreambuf_iterator<char>(blob_input),
+                                 istreambuf_iterator<char>()};
+        blob_input.close();
+        return blob_content.substr(blob_content.find('\0') + 1);
+}
+
+string readTree(string file_address){
+    zstr::ifstream tree_input(file_address, ofstream::binary);
+        if (!tree_input.is_open())
+        {
+            std::cerr << "Failed to open file\n";
+            return "";
+        }
+        string tree_content{istreambuf_iterator<char>(tree_input),
+                                 istreambuf_iterator<char>()};
+        tree_input.close();
+
+        // string Stream example:- "tree 96\x0040000 doo\x00pPC!\xb4\xde>\xf8\x88ܷ\xb6H\x17z,6.\x01\xba40000 dooby\x00赂\xbdd\xd8\xc1)E\x12\xe3H֟d\xb0=@q'100644 humpty\x00ؘ\x9d\x89\xa4/\xcc\xc5r8\x1e\xfb\x9d\x94a\xfe\xf1\x94\xf9~"
+        // required:- "doo\ndooby\nhumpty\n"
+
+        // Spliting the stream into entries on basis of " "
+        vector<string> tree_enterires;
+        string line;
+        stringstream ss(tree_content);
+        while (getline(ss, line, ' '))
+        {
+            tree_enterires.push_back(line);
+        }
+        string res;
+        for (int i = 2; i < tree_enterires.size(); i++)
+        {
+            string entry = tree_enterires[i];
+            int pos = entry.find('\0');
+            res += entry.substr(0, pos) + '\n';
+        }
+        return res;
+
+        // std::cout << tree_content.substr(tree_content.find('\0') + 1);
 }
 
 string makeBlob(string file)
