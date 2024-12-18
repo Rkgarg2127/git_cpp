@@ -244,6 +244,7 @@ bool gitClone(string repo_url, string directory_name)
         }
         else
         {
+            cout << readBuffer << endl;
 //             Expected Response data: 001e# service=git-upload-pack
 //             0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
 //             003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
