@@ -276,12 +276,22 @@ bool init(string dir)
         filesystem::create_directory(dir + "/.git/objects");
         filesystem::create_directory(dir + "/.git/refs");
         ofstream headFile(dir + "/.git/HEAD");
-        
+        if (headFile.is_open())
+        {
+            headFile << "ref: refs/heads/master\n";
+            headFile.close();
+        }
+        else
+        {
+            cerr << "Failed to create .git/HEAD file.\n";
+            return false;
+        }
 
         return true;
     }
     catch (const filesystem::filesystem_error &e)
     {
+        cout<<"errror"<<endl;
         cerr << e.what() << '\n';
         return false;
     }
