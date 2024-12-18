@@ -247,7 +247,26 @@ bool gitClone(string repo_url, string directory_name)
         }
         else
         {
-            std::cout << "Response data: " << readBuffer << std::endl;
+            std::string fileName = "example.txt";
+
+            // Create an ofstream object to open the file
+            std::ofstream outFile(fileName);
+
+            // Check if the file was successfully opened
+            if (!outFile)
+            {
+                std::cerr << "Error: Could not open the file " << fileName << '\n';
+                return 1; // Exit with an error code
+            }
+
+            // Write the string to the file
+            outFile << readBuffer;
+
+            // Close the file
+            outFile.close();
+
+            std::cout << "Data written to file successfully.\n";
+            // std::cout << "Response data: " << readBuffer << std::endl;
         }
 
         // Cleanup
@@ -270,7 +289,7 @@ bool init(string dir)
 
     try
     {
-        
+
         // cout<<"kjhjjkjlukl"<<endl;
         filesystem::create_directory(dir);
         filesystem::create_directory(dir + "/.git");
@@ -292,7 +311,7 @@ bool init(string dir)
     }
     catch (const filesystem::filesystem_error &e)
     {
-        cout<<"errror"<<endl;
+        cout << "errror" << endl;
         cerr << e.what() << '\n';
         return false;
     }
