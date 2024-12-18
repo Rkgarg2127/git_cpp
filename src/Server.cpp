@@ -219,26 +219,23 @@ bool gitClone(string repo_url, string directory_name)
         return false;
     }
 
-    CURL *curl;
-    CURLcode res;
-
     // Initialize libcurl
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    curl = curl_easy_init();
+    CURL *curl = curl_easy_init();
 
     if (curl)
     {
         std::string readBuffer;
 
         // Set the URL for the request
-        curl_easy_setopt(curl, CURLOPT_URL, (repo_url+"/info/refs?service=git-upload-pack").c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "kkjk/info/refs?service=git-upload-pack").c_str());
 
         // Set the callback function to handle the response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
         // Perform the request
-        res = curl_easy_perform(curl);
+        CURLcode res = curl_easy_perform(curl);
 
         // Check if the request was successful
         if (res != CURLE_OK)
@@ -247,9 +244,25 @@ bool gitClone(string repo_url, string directory_name)
         }
         else
         {
-            std::cout << "Response data: " << readBuffer << std::endl;
-        }
+//             Expected Response data: 001e# service=git-upload-pack
+//             0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
+//             003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
 
+            //splinting the response into lines
+            std::istringstream stream(readBuffer);
+            std::string line;
+            std::vector<std::string> lines;
+
+            while (std::getline(stream, line))
+            {
+                lines.push_back(line); // Store each line in the vector
+            }
+
+            // Extract the HEAD reference
+            
+
+
+        }
         // Cleanup
         curl_easy_cleanup(curl);
     }
@@ -270,7 +283,7 @@ bool init(string dir)
 
     try
     {
-        
+
         // cout<<"kjhjjkjlukl"<<endl;
         filesystem::create_directory(dir);
         filesystem::create_directory(dir + "/.git");
@@ -292,7 +305,7 @@ bool init(string dir)
     }
     catch (const filesystem::filesystem_error &e)
     {
-        cout<<"errror"<<endl;
+        cout << "errror" << endl;
         cerr << e.what() << '\n';
         return false;
     }
