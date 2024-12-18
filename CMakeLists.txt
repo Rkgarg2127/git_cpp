@@ -19,7 +19,7 @@ target_link_libraries(git PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 # Add the libcurl library
 find_package(CURL REQUIRED)
 # Link libcurl to your project
-target_link_libraries(git Private CURL::libcurl)
+target_link_libraries(git PRIVATE CURL::libcurl)
 
 # Link zlib
 target_link_libraries(git PRIVATE z)
