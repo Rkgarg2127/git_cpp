@@ -231,7 +231,7 @@ bool gitClone(string repo_url, string directory_name)
         std::string readBuffer;
 
         // Set the URL for the request
-        curl_easy_setopt(curl, CURLOPT_URL, repo_url.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, (repo_url+"/info/refs").c_str());
 
         // Set the callback function to handle the response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
