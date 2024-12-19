@@ -29,6 +29,49 @@ string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
 pair<string,string> curl_request(string repo_url);
 
+
+std::string decompressString(const std::string& compressed) {
+    // Initialize the zlib stream
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+    strm.avail_in = compressed.size();                 // Input size
+    strm.next_in = (Bytef*)compressed.data();          // Input data
+
+    // Initialize decompression
+    if (inflateInit(&strm) != Z_OK) {
+        throw std::runtime_error("Failed to initialize zlib");
+    }
+
+    // Output buffer
+    std::string decompressed;
+    const size_t bufferSize = 4096; // Temporary buffer size
+    char buffer[bufferSize];
+
+    // Decompress data
+    int ret;
+    do {
+        strm.avail_out = bufferSize;
+        strm.next_out = reinterpret_cast<Bytef*>(buffer);
+
+        ret = inflate(&strm, Z_NO_FLUSH);
+
+        if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR) {
+            inflateEnd(&strm);
+            throw std::runtime_error("Decompression failed");
+        }
+
+        // Append decompressed data to the result string
+        decompressed.append(buffer, bufferSize - strm.avail_out);
+    } while (ret != Z_STREAM_END);
+
+    // Cleanup
+    inflateEnd(&strm);
+
+    return decompressed;
+}
+
 int main(int argc, char *argv[])
 {
     // Flush after every std::cout / std::cerr
@@ -255,7 +298,17 @@ bool gitClone(string repo_url, string directory_name)
         }
         objectSize = objectSize*128 + ((unsigned char)pack[packiterartor]&127);
         packiterartor++;
-        return true;
+        
+
+        if(objectType==6){
+            cout<<"refrence delta"<<endl;
+        }
+        else if(objectType==7){
+            cout<<"ofs delta"<<endl;
+        }
+        else{
+            cout<<decompressString(pack.substr(packiterartor,objectSize))<<endl;
+        }
     }
 
     return true;
