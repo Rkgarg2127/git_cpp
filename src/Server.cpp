@@ -235,7 +235,21 @@ bool gitClone(string repo_url, string directory_name)
     // //pack:0008NAK
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
 
-    cout<<pack.substr(8,10)<<endl;
+    //parsing the pack file
+    int versionNumber = 0;
+    for(int i=8 ; i<16;i++){
+        versionNumber = versionNumber*256 + (unsigned char)pack[i];
+    }
+    int numberOfObjects = 0;
+    for(int i=16 ; i<20;i++){
+        numberOfObjects = numberOfObjects*256 + (unsigned char)pack[i];
+    }
+    int countObject=0, packiterartor=20;
+    while(countObject<numberOfObjects){
+        int objectType = (((unsigned char)pack[packiterartor++])&112)>>4; // 112 = 01110000
+        cout<<(int)pack[packiterartor-1]<<endl;
+        return true;
+    }
 
     return true;
 }
