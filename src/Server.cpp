@@ -307,7 +307,7 @@ bool gitClone(string repo_url, string directory_name)
             cout<<"ofs delta"<<endl;
         }
         else{
-            cout<<decompressString(pack.substr(packiterartor,objectSize))<<endl;
+            cout<<decompressString(pack.substr(packiterartor))<<endl;
         }
     }
 
