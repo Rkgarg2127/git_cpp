@@ -290,7 +290,6 @@ bool gitClone(string repo_url, string directory_name)
         // MAking a request to get the pack file
         // fetch git-upload-pack
         string pack; // to store the pack data
-
         // Making the post request data
         string postData;
         for (int i = 2; i < lines.size() - 1; i++)
