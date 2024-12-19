@@ -297,7 +297,8 @@ bool gitClone(string repo_url, string directory_name)
             postData += "00032want " + lines[i].substr(0, 40) + "\n";
         }
         postData += "00000009done\n";
-        postData = "00032want " + readBuffer + "\n"+"00000009done\n";
+        postData = "0032want " + readBuffer + "\n"+"00000009done\n";
+        
         cout <<"postData:"<< postData << endl;
 
         // Set the URL for the request
