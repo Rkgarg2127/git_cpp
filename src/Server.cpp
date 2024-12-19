@@ -27,7 +27,7 @@ string generateSHA1(const std::string &input);
 string fromHex(const std::string &hexStr);
 string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
-
+pair<string,string> curl_request(string repo_url);
 
 int main(int argc, char *argv[])
 {
