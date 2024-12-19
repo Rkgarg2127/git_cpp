@@ -326,9 +326,9 @@ pair<string,string> curl_request(string repo_url){
     curl_global_init(CURL_GLOBAL_DEFAULT);
     CURL *curl = curl_easy_init();
 
+    std::string readBuffer;
     if (curl)
     {
-        std::string readBuffer;
 
         // Set the URL for the request
         curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/info/refs?service=git-upload-pack").c_str());
