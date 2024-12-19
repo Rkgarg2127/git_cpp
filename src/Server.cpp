@@ -224,12 +224,18 @@ bool gitClone(string repo_url, string directory_name)
     // making a request to get the pack file
     pair<string,string> packpair = curl_request(repo_url);
     string pack= packpair.first;
-    string packHashes= packpair.second;
-    if(pack=="" || packHashes==""){
+    string packinfo= packpair.second;
+    if(pack=="" || packinfo==""){
         return false;
     }
-    cout<<"readBuffer: "<<packHashes<<endl;
-    cout<<"pack: "<<pack<<endl;
+    // //packinfo:  001e# service=git-upload-pack
+    //     0000015547b37f1a82bfe85f6d8df52b6258b75e4343b7fd HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
+    //     003f47b37f1a82bfe85f6d8df52b6258b75e4343b7fd refs/heads/master
+    //     0000
+    // //pack:0008NAK
+    //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
+
+    cout<<pack.substr(6,10)<<endl;
 
     return true;
 }
