@@ -291,7 +291,7 @@ bool gitClone(string repo_url, string directory_name)
         // Set the callback function to handle the response
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
         // Set the response data
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &pack);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA,(void*) &pack);
         // Set the headers
         struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/x-git-upload-pack-request");
