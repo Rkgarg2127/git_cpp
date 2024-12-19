@@ -277,7 +277,7 @@ bool gitClone(string repo_url, string directory_name)
         string postData;
         for (int i = 2; i < lines.size() - 1; i++)
         {
-            postData += "0032want " + lines[i].substr(0, 40) + "\n";
+            postData += "0032want " + lines[i].substr(4, 40) + "\n";
         }
         postData += "00000009done\n";
         
