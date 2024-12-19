@@ -246,8 +246,15 @@ bool gitClone(string repo_url, string directory_name)
     }
     int countObject=0, packiterartor=20;
     while(countObject<numberOfObjects){
-        int objectType = (((unsigned char)pack[packiterartor++])&112)>>4; // 112 = 01110000
-        cout<<(unsigned int )pack[packiterartor-1]<<endl;
+        int objectType = (((unsigned char)pack[packiterartor])&112)>>4; // 112 = 01110000
+        int objectSize = ((unsigned char)pack[packiterartor])&15; // 15 = 00001111
+        while(pack[packiterartor]& 128){
+            packiterartor++;
+            objectSize = objectSize*128 + ((unsigned char)pack[packiterartor]&127);
+        }
+        objectSize = objectSize*128 + ((unsigned char)pack[packiterartor]&127);
+        packiterartor++;
+        cout<<objectType<<" "<<objectSize<<endl;
         return true;
     }
 
