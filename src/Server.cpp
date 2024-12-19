@@ -237,40 +237,102 @@ bool gitClone(string repo_url, string directory_name)
         return false;
     }
 
-    CURL* handle = curl_easy_init();
-    if (handle) {
-        // fetch info/refs
-        curl_easy_setopt(handle, CURLOPT_URL, (repo_url + "/info/refs?service=git-upload-pack").c_str());
-        
-        std::string packhash;
-        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void*) &packhash);
-        curl_easy_perform(handle);
-        curl_easy_reset(handle);
+    // Initialize libcurl
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CURL *curl = curl_easy_init();
+
+    if (curl)
+    {
+        std::string readBuffer;
+
+        // Set the URL for the request
+        curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/info/refs?service=git-upload-pack").c_str());
+
+        // Set the callback function to handle the response
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+        // Perform the request
+        CURLcode res = curl_easy_perform(curl);
+
+        // Check if the request was successful
+        if (res != CURLE_OK)
+        {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            // Cleanup
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            return false;
+        }
+
+        cout << readBuffer << endl;
+        //Expected Response data: 001e# service=git-upload-pack
+        //0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
+        //003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
+
+        // splinting the response into lines
+        std::istringstream stream(readBuffer);
+        std::string line;
+        std::vector<std::string> lines;
+
+        while (std::getline(stream, line))
+        {
+            lines.push_back(line); // Store each line in the vector
+        }
+        curl_easy_reset(curl);
+
+        // To do some response check conditions
+        // // Clients MUST validate the first five bytes of the response entity matches the regex ^[0-9a-f]{4}#. If this test fails, clients MUST NOT continue.
+        // // Clients MUST parse the entire response as a sequence of pkt-line records.
+        // // Clients MUST verify the first pkt-line is # service=$servicename. Servers MUST set $servicename to be the request parameter value. Servers SHOULD include an LF at the end of this line. Clients MUST ignore an LF at the end of the line.
+        // // Servers MUST terminate the response with the magic 0000 end pkt-line marker.
+
+        // MAking a request to get the pack file
         // fetch git-upload-pack
-        curl_easy_setopt(handle, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
-        std::string postdata = "0032want " + packhash + "\n" +
-                               "00000009done\n";
-        cout<<"packhash: "<<packhash<<endl; 
-                               
-        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, postdata.c_str());
-        std::string pack;
-        curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void*) &pack);
-        curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, pack_data_callback);
-        struct curl_slist* headers = NULL;
+        string pack; // to store the pack data
+
+        // Making the post request data
+        string postData;
+        for (int i = 2; i < lines.size() - 1; i++)
+        {
+            postData += "00032want " + lines[i].substr(0, 40) + "\n";
+        }
+        postData += "00000009done\n";
+        cout <<"postData:"<< postData << endl;
+
+        // Set the URL for the request
+        curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
+        // Set the request method to POST
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        // Set the POST data
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
+        // Set the callback function to handle the response
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pack_data_callback);
+        // Set the response data
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA,(void*) &pack);
+        // Set the headers
+        struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/x-git-upload-pack-request");
-        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-        curl_easy_perform(handle);
-        // clean up
-        curl_easy_cleanup(handle);
-        curl_slist_free_all(headers);
-        cout<<"pack: "<<pack<<endl; 
-        return true;
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        // Perform the request
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK)
+        {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            // Cleanup
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            return false;
+        }
+        cout << "pack" << pack << endl;
+
+        // Cleanup
+        curl_easy_cleanup(curl);
     }
-    else {
-        std::cerr << "Failed to initialize curl.\n";
-        return {};
-    }
+
+    curl_global_cleanup();
+    return true;
 }
 
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -539,6 +601,6 @@ string getFormattedTimestamp()
     return formatted_timestamp.str();
 }
 
-// git add .
-// git commit --allow-empty -m "[any message]"
-// git push origin master
+git add .
+git commit --allow-empty -m "[any message]"
+git push origin master
