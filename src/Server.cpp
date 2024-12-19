@@ -235,7 +235,7 @@ bool gitClone(string repo_url, string directory_name)
     // //pack:0008NAK
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
 
-    cout<<pack.substr(6,10)<<endl;
+    cout<<pack.substr(8,10)<<endl;
 
     return true;
 }
