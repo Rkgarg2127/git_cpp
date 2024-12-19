@@ -247,7 +247,7 @@ bool gitClone(string repo_url, string directory_name)
     int countObject=0, packiterartor=20;
     while(countObject<numberOfObjects){
         int objectType = (((unsigned char)pack[packiterartor++])&112)>>4; // 112 = 01110000
-        cout<<(int)pack[packiterartor-1]<<endl;
+        cout<<(unsigned int )pack[packiterartor-1]<<endl;
         return true;
     }
 
