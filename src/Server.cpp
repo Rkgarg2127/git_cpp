@@ -307,32 +307,16 @@ bool gitClone(string repo_url, string directory_name)
         else if(objectType==7){
             cout<<"ofs delta"<<endl;
         }
-        else if (objectType==1){
-             cout<<endl<<endl<<"commit"<<endl;
-            string dec= decompressString(pack.substr(packiterartor)) ;
-            packiterartor+= (compressedString(dec).size());
-            cout<<dec<<endl;
-        }
-        else if (objectType==2){
-             cout<<endl<<endl<<"tree"<<endl;
-            string dec= decompressString(pack.substr(packiterartor)) ;
-            packiterartor+= (compressedString(dec).size());
-            cout<<dec<<endl;
-        }
-        else if (objectType==3){
-             cout<<endl<<endl<<"blob"<<endl;
-            string dec= decompressString(pack.substr(packiterartor)) ;
-            packiterartor+= (compressedString(dec).size());
-            cout<<dec<<endl;
-        }
-        else if (objectType==4){
-             cout<<endl<<endl<<"tag"<<endl;
-            string dec= decompressString(pack.substr(packiterartor)) ;
-            packiterartor+= (compressedString(dec).size());
-            cout<<dec<<endl;
+        else if(objectType==5){
+            cout<<"undefined object type"<<endl;
         }
         else{
-            cout<<"unknown"<<endl;
+            cout<<"object type: "<<objectType<<endl;
+            string objectTypeName= (objectType==1)?"commit":(objectType==2)?"tree":(objectType==3)?"blob":"tag";
+            string dec= decompressString(pack.substr(packiterartor)) ;
+            packiterartor+= (compressedString(dec).size());
+            cout<<dec<<endl;
+            makeCompressedObject(objectTypeName+to_string(dec.size())+'\0'+dec);
         }
     }
 
