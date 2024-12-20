@@ -308,20 +308,26 @@ bool gitClone(string repo_url, string directory_name)
             cout<<"ofs delta"<<endl;
         }
         else if (objectType==1){
+             cout<<endl<<endl<<"commit"<<endl;
             string dec= decompressString(pack.substr(packiterartor)) ;
             packiterartor+= (compressedString(dec).size());
             cout<<dec<<endl;
         }
         else if (objectType==2){
+             cout<<endl<<endl<<"tree"<<endl;
             string dec= decompressString(pack.substr(packiterartor)) ;
             packiterartor+= (compressedString(dec).size());
             cout<<dec<<endl;
         }
-        else if (objectType==3){string dec= decompressString(pack.substr(packiterartor)) ;
+        else if (objectType==3){
+             cout<<endl<<endl<<"blob"<<endl;
+            string dec= decompressString(pack.substr(packiterartor)) ;
             packiterartor+= (compressedString(dec).size());
             cout<<dec<<endl;
         }
-        else if (objectType==4){string dec= decompressString(pack.substr(packiterartor)) ;
+        else if (objectType==4){
+             cout<<endl<<endl<<"tag"<<endl;
+            string dec= decompressString(pack.substr(packiterartor)) ;
             packiterartor+= (compressedString(dec).size());
             cout<<dec<<endl;
         }
