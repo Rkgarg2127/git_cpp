@@ -290,6 +290,8 @@ bool gitClone(string repo_url, string directory_name)
     int countObject=0, packiterartor=20;
     while(countObject<numberOfObjects){
         int objectType = (((unsigned char)pack[packiterartor])&112)>>4; // 112 = 01110000
+
+        //Calculating size of object
         int objectSize = ((unsigned char)pack[packiterartor])&15; // 15 = 00001111
         while(pack[packiterartor]& 128){
             packiterartor++;
@@ -305,8 +307,22 @@ bool gitClone(string repo_url, string directory_name)
         else if(objectType==7){
             cout<<"ofs delta"<<endl;
         }
+        else if (objectType==1){
+            string dec= decompressString(pack.substr(packiterartor)) ;
+            packiterartor+= (compressedString(pack.substr(packiterartor)).size());
+            cout<<dec<<endl;
+        }
+        else if (objectType==2){
+            cout<<"tree"<<endl;
+        }
+        else if (objectType==3){
+            cout<<"blob"<<endl;
+        }
+        else if (objectType==4){
+            cout<<"tag"<<endl;
+        }
         else{
-            cout<<decompressString(pack.substr(packiterartor))<<endl;
+            cout<<"unknown"<<endl;
         }
     }
 
@@ -323,7 +339,7 @@ pair<string,string> curl_request(string repo_url){
     curl_global_init(CURL_GLOBAL_DEFAULT);
     CURL *curl = curl_easy_init();
 
-    string readBuffer;
+    string readBuffer,masterHash;
     string pack; // to store the pack data
     if (curl)
     {
@@ -353,13 +369,7 @@ pair<string,string> curl_request(string repo_url){
 
         //pasring readbuffer for packHash
         // spliting the response into lines
-        std::istringstream stream(readBuffer);
-        std::string line;
-        std::vector<std::string> lines;
-        while (std::getline(stream, line))
-        {
-            lines.push_back(line); // Store each line in the vector
-        }
+        
 
         // To do some response check conditions
         // // Clients MUST validate the first five bytes of the response entity matches the regex ^[0-9a-f]{4}#. If this test fails, clients MUST NOT continue.
@@ -376,7 +386,7 @@ pair<string,string> curl_request(string repo_url){
 
         // Making the post request data
         size_t position = readBuffer.find("refs/heads/master\n");
-        string masterHash = readBuffer.substr(position - 41, 40);//hashcode extraction
+        masterHash = readBuffer.substr(position - 41, 40);//hashcode extraction
         string postData= "0032want " + masterHash+ "\n"+ "00000009done\n";
 
         // Doing the post request
@@ -408,7 +418,7 @@ pair<string,string> curl_request(string repo_url){
     }
 
     curl_global_cleanup();
-    return {pack,readBuffer};
+    return {pack, masterHash};
 }
 
 // create a git with specified name
