@@ -271,7 +271,7 @@ bool gitClone(string repo_url, string directory_name)
     if(pack=="" || packHash==""){
         return false;
     }
-    cout<<pack<<endl<<packHash<<endl;
+    cout<<"pack:"<<pack<<endl<<packHash<<endl;
     // //packHash: 003f47b37f1a82bfe85f6d8df52b6258b75e4343b7fd refs/heads/master
     // //pack:0008NAK
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
