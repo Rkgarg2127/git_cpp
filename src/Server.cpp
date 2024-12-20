@@ -267,14 +267,12 @@ bool gitClone(string repo_url, string directory_name)
     // making a request to get the pack file
     pair<string,string> packpair = curl_request(repo_url);
     string pack= packpair.first;
-    string packinfo= packpair.second;
-    if(pack=="" || packinfo==""){
+    string packHash= packpair.second;
+    if(pack=="" || packHash==""){
         return false;
     }
-    // //packinfo:  001e# service=git-upload-pack
-    //     0000015547b37f1a82bfe85f6d8df52b6258b75e4343b7fd HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
-    //     003f47b37f1a82bfe85f6d8df52b6258b75e4343b7fd refs/heads/master
-    //     0000
+    cout<<pack<<endl<<packHash<<endl;
+    // //packHash: 003f47b37f1a82bfe85f6d8df52b6258b75e4343b7fd refs/heads/master
     // //pack:0008NAK
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
 
@@ -287,6 +285,7 @@ bool gitClone(string repo_url, string directory_name)
     for(int i=16 ; i<20;i++){
         numberOfObjects = numberOfObjects*256 + (unsigned char)pack[i];
     }
+
     cout<<versionNumber<<" "<<numberOfObjects<<endl;
     int countObject=0, packiterartor=20;
     while(countObject<numberOfObjects){
@@ -376,12 +375,9 @@ pair<string,string> curl_request(string repo_url){
 
 
         // Making the post request data
-        string postData;
-        for (int i = 2; i < lines.size() - 1; i++)// 2nd line to 2nd last line
-        {
-            postData += "0032want " + lines[i].substr(4, 40) + "\n";//hashcode extraction
-        }
-        postData += "00000009done\n";
+        size_t position = readBuffer.find("refs/heads/master\n");
+        string masterHash = readBuffer.substr(position - 41, 40);//hashcode extraction
+        string postData= "0032want " + masterHash+ "\n"+ "00000009done\n";
 
         // Doing the post request
         curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
