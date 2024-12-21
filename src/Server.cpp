@@ -281,6 +281,7 @@ bool gitClone(string repo_url, string directory_name)
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
 
     string  packHash= makePackFile(pack.substr(4));
+    cout<<"packHash:"<<packHash;
     if(packHash==""){
         return false;
     }
