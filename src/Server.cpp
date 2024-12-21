@@ -695,16 +695,16 @@ string compressedString(string data)
 }
 
 string fromHex(const std::string &hexStr)
-// {
-//     std::string result;
-//     for (size_t i = 0; i < hexStr.length(); i += 2)
-//     {
-//         std::string byteStr = hexStr.substr(i, 2);
-//         char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
-//         result += byte;
-//     }
-//     return result;
-// }
+{
+    std::string result;
+    for (size_t i = 0; i < hexStr.length(); i += 2)
+    {
+        std::string byteStr = hexStr.substr(i, 2);
+        char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
+        result += byte;
+    }
+    return result;
+}
 
 string getFormattedTimestamp()
 {
