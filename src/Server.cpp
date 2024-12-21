@@ -694,7 +694,7 @@ string compressedString(string data)
     return compressedData;
 }
 
-// string fromHex(const std::string &hexStr)
+string fromHex(const std::string &hexStr)
 // {
 //     std::string result;
 //     for (size_t i = 0; i < hexStr.length(); i += 2)
