@@ -319,7 +319,7 @@ bool gitClone(string repo_url, string directory_name)
             string baseObjectContent = catFile(baseObjectHash);
             string baseObjectType = baseObjectContent.substr(0, baseObjectContent.find(' '));
             string baseObjectSize = baseObjectContent.substr(baseObjectContent.find(' ') + 1, baseObjectContent.find('\0') - baseObjectContent.find(' ') - 1);
-            if (baseObjectType)
+            
         }
         else if (objectType == 5)
         {
@@ -497,7 +497,7 @@ string makePackFile(string packData)
         else
         {
             cout << "Failed to create directory\n";
-            return false;
+            return "";
         }
     }
 
