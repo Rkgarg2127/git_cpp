@@ -734,6 +734,6 @@ string getFormattedTimestamp()
     return formatted_timestamp.str();
 }
 
-git add .
-git commit --allow-empty -m "[any message]"
-git push origin master
+// git add .
+// git commit --allow-empty -m "[any message]"
+// git push origin master
