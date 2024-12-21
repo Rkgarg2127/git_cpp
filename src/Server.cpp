@@ -267,18 +267,20 @@ bool gitClone(string repo_url, string directory_name)
     // making a request to get the pack file
     pair<string, string> packpair = curl_request(repo_url);
     string pack = packpair.first;
-    string packHash = packpair.second;
-    if (pack == "" || packHash == "")
+    string masterCommitHash = packpair.second;
+    if (pack == "" || masterCommitHash == "")
     {
         return false;
     }
-    cout << "packhash:" << packHash << endl;
+
     // //packHash: 003f47b37f1a82bfe85f6d8df52b6258b75e4343b7fd refs/heads/master
     // //pack:0008NAK
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
 
-    string  fdb= makePackFile(pack.substr(4));
-    cout<<fdb<<endl;
+    string  packHash= makePackFile(pack.substr(4));
+    if(packHash==""){
+        return false;
+    }
     // parsing the pack file
     int versionNumber = 0;
     for (int i = 8; i < 16; i++)
@@ -337,6 +339,7 @@ bool gitClone(string repo_url, string directory_name)
             cout << dec << endl;
             makeCompressedObject(objectTypeName + to_string(dec.size()) + '\0' + dec);
         }
+        countObject++;
     }
 
     return true;
