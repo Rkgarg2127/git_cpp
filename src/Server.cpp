@@ -517,7 +517,8 @@ string makePackFile(string packData)
     ofstream objectFile(file_address, ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
-    cout<<file_address<<endl;
+    string packIdxContent= makePackIdxFile(dir + "/pack-" + sha_hash+".pack", dir + "/pack-" + sha_hash+".idx");
+    cout<<"packIdcContent:"<<packIdxContent<<endl;
     return sha_hash;
 }
 
