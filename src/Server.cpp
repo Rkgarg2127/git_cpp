@@ -493,7 +493,7 @@ string makePackFile(string packData)
     {
         if (filesystem::create_directory(dir))
         {
-            // cout << "Directory created\n";
+            cout << "Directory created\n";
         }
         else
         {
