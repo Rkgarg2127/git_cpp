@@ -491,7 +491,7 @@ string makePackFile(string packData)
     string dir = ".git/objects/pack";
     if (!filesystem::exists(dir))
     {
-        if (filesystem::create_directory(dir))
+        if (filesystem::create_directories(dir))
         {
             cout << "Directory created\n";
         }
@@ -734,6 +734,6 @@ string getFormattedTimestamp()
     return formatted_timestamp.str();
 }
 
-// git add .
-// git commit --allow-empty -m "[any message]"
-// git push origin master
+git add .
+git commit --allow-empty -m "[any message]"
+git push origin master
