@@ -369,9 +369,11 @@ string fetchPackIdx(const string& repoUrl, const string& packHash) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, idxData);
 
+    
     // Perform the request
     res = curl_easy_perform(curl);
 
+    cout<<idxData;
     // Check for errors
     if (res != CURLE_OK) {
         cerr << "CURL error: " << curl_easy_strerror(res) << endl;
