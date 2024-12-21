@@ -16,6 +16,7 @@
 using namespace std;
 
 bool init(string dir);
+string catFile(string hash);
 string readBlob(string file_address);
 string readTree(string file_address);
 string makeBlob(string file);
