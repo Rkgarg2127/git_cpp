@@ -24,16 +24,17 @@ string makeTree(string directoryAddress);
 string makeCompressedObject(string input);
 bool gitClone(string repo_url, string directory_name);
 string compressedString(string data);
-string generateSHA1(const std::string &input);
-string fromHex(const std::string &hexStr);
+string generateSHA1(const string &input);
+string fromHex(const string &hexStr);
 string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
 pair<string, string> curl_request(string repo_url);
 string makePackFile(string packData);
-string fetchPackIdx(const string& repoUrl, const string& packHash);
+string makePackIdxFile(const string& packPath, const string& idxPath) ;
 
 
-std::string decompressString(const std::string &compressed)
+
+string decompressString(const string &compressed)
 {
     // Initialize the zlib stream
     z_stream strm;
@@ -46,11 +47,11 @@ std::string decompressString(const std::string &compressed)
     // Initialize decompression
     if (inflateInit(&strm) != Z_OK)
     {
-        throw std::runtime_error("Failed to initialize zlib");
+        throw runtime_error("Failed to initialize zlib");
     }
 
     // Output buffer
-    std::string decompressed;
+    string decompressed;
     const size_t bufferSize = 4096; // Temporary buffer size
     char buffer[bufferSize];
 
@@ -66,7 +67,7 @@ std::string decompressString(const std::string &compressed)
         if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR)
         {
             inflateEnd(&strm);
-            throw std::runtime_error("Decompression failed");
+            throw runtime_error("Decompression failed");
         }
 
         // Append decompressed data to the result string
@@ -81,9 +82,9 @@ std::string decompressString(const std::string &compressed)
 
 int main(int argc, char *argv[])
 {
-    // Flush after every std::cout / std::cerr
-    std::cout << std::unitbuf;
-    std::cerr << std::unitbuf;
+    // Flush after every cout / cerr
+    cout << unitbuf;
+    cerr << unitbuf;
 
     if (argc < 2)
     {
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
         string result = readTree(file_address);
         cout << result;
 
-        // std::cout << tree_content.substr(tree_content.find('\0') + 1);
+        // cout << tree_content.substr(tree_content.find('\0') + 1);
     }
     else if (command == "write-tree")
     {
@@ -284,10 +285,9 @@ bool gitClone(string repo_url, string directory_name)
         return false;
     }
 
-    string packIdxContent= fetchPackIdx(repo_url, packHash);
-    cout<<"packIdxContent: "<<packIdxContent<<endl;
-    packIdxContent= fetchPackIdx(repo_url,masterCommitHash);
-    cout<<"packIdxContent: "<<packIdxContent<<endl;
+    string packIdxContent= makePackIdxFile(".git/objects/pack" + "/" + packHash+".pack", ".git/objects/pack" + "/" + packHash+".idx");
+    cout<<"packIdxContent"<<packIdxContent<<endl;
+    return 0;
     // parsing the pack file
     int versionNumber = 0;
     for (int i = 8; i < 16; i++)
@@ -300,7 +300,6 @@ bool gitClone(string repo_url, string directory_name)
         numberOfObjects = numberOfObjects * 256 + (unsigned char)pack[i];
     }
 
-    cout << versionNumber << " " << numberOfObjects << endl;
     int countObject = 0, packiterartor = 20;
     while (countObject < numberOfObjects)
     {
@@ -320,10 +319,12 @@ bool gitClone(string repo_url, string directory_name)
         if (objectType == 6)
         {
             cout << "refrence delta" << endl;
+            return false;
         }
         else if (objectType == 7)
         {
             cout << "ofs delta" << endl;
+            return false;
             string baseObjectHash = pack.substr(packiterartor, 20);
             packiterartor += 20;
             string baseObjectContent = catFile(baseObjectHash);
@@ -352,45 +353,10 @@ bool gitClone(string repo_url, string directory_name)
     return true;
 }
 
-string fetchPackIdx(const string& repoUrl, const string& packHash) {
-    CURL* curl;
-    CURLcode res;
-    curl = curl_easy_init();
-    if (!curl) {
-        cerr << "Failed to initialize CURL." << endl;
-        return "";
-    }
-
-    string idxData;
-    // Construct the URL for the .idx file
-    string idxUrl = repoUrl + "/objects/pack/pack-" + packHash + ".idx";
-    cout << "Fetching .idx from: " << idxUrl << endl;
-
-    // Set CURL options
-    curl_easy_setopt(curl, CURLOPT_URL, idxUrl.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &idxData);
-
-    
-    // Perform the request
-    res = curl_easy_perform(curl);
-
-    cout<<idxData;
-    // Check for errors
-    if (res != CURLE_OK) {
-        cerr << "CURL error: " << curl_easy_strerror(res) << endl;
-        curl_easy_cleanup(curl);
-        return "";
-    }
-
-    // Clean up
-    curl_easy_cleanup(curl);
-    return idxData;
-}
 
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
-    ((std::string *)userp)->append((char *)contents, size * nmemb);
+    ((string *)userp)->append((char *)contents, size * nmemb);
     return size * nmemb;
 }
 
@@ -416,7 +382,7 @@ pair<string, string> curl_request(string repo_url)
         // Check if the request was successful
         if (res != CURLE_OK)
         {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
             // Cleanup
             curl_easy_cleanup(curl);
             curl_global_cleanup();
@@ -462,7 +428,7 @@ pair<string, string> curl_request(string repo_url)
 
         if (res != CURLE_OK)
         {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
             // Cleanup
             curl_easy_cleanup(curl);
             curl_global_cleanup();
@@ -546,11 +512,40 @@ string makePackFile(string packData)
             return "";
         }
     }
-    string file_address = dir + "/" + sha_hash;
+    string file_address = dir + "/" + sha_hash+".pack";
     ofstream objectFile(file_address, ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
     return sha_hash;
+}
+
+string makePackIdxFile(const string& packPath, const string& idxPath) {
+    string command = "git index-pack --stdin < " + packPath + " > " + idxPath;
+    int result = system(command.c_str());
+    if(result!=0){
+        cerr<<"unable to create parse file with packPath:"<<packPath ;
+        return "";
+    }
+
+    // Create an ifstream object to read the file
+    ifstream inputFile(idxPath);
+
+    // Check if the file is open
+    if (!inputFile.is_open()) {
+        cerr << "Error opening file: " << idxPath << endl;
+        return ""; // return non-zero value to indicate failure
+    }
+
+    string line;
+    string idxFileContent;
+    // Read file line by line
+    while (getline(inputFile, line)) {
+        idxFileContent+= line+'\n'; // print each line
+    }
+
+    // Close the file when done
+    inputFile.close();
+    return idxFileContent;
 }
 
 string readBlob(string file_address)
@@ -573,7 +568,7 @@ string readTree(string file_address)
     zstr::ifstream tree_input(file_address, ofstream::binary);
     if (!tree_input.is_open())
     {
-        std::cerr << "Failed to open file\n";
+        cerr << "Failed to open file\n";
         return "";
     }
     string tree_content{istreambuf_iterator<char>(tree_input),
@@ -600,7 +595,7 @@ string readTree(string file_address)
     }
     return res;
 
-    // std::cout << tree_content.substr(tree_content.find('\0') + 1);
+    // cout << tree_content.substr(tree_content.find('\0') + 1);
 }
 
 string makeBlob(string file)
@@ -624,7 +619,7 @@ string makeTree(string directoryAddress)
 {
     if (!filesystem::exists(directoryAddress) || !filesystem::is_directory(directoryAddress))
     {
-        std::cerr << "Directory:" + directoryAddress + " does not exist or is not accessible!" << std::endl;
+        cerr << "Directory:" + directoryAddress + " does not exist or is not accessible!" << endl;
         return "";
     }
 
@@ -707,17 +702,17 @@ string makeCompressedObject(string input)
     return sha_hash;
 }
 
-string generateSHA1(const std::string &input)
+string generateSHA1(const string &input)
 {
     unsigned char hash[SHA_DIGEST_LENGTH]; // SHA1 hash is 20 bytes
     SHA1(reinterpret_cast<const unsigned char *>(input.c_str()), input.size(), hash);
 
     // Convert hash to hexadecimal string
-    std::ostringstream oss;
-    oss << std::hex << std::setfill('0');
+    ostringstream oss;
+    oss << hex << setfill('0');
     for (int i = 0; i < SHA_DIGEST_LENGTH; ++i)
     {
-        oss << std::setw(2) << static_cast<int>(hash[i]);
+        oss << setw(2) << static_cast<int>(hash[i]);
     }
     return oss.str();
 }
@@ -732,20 +727,20 @@ string compressedString(string data)
 
     if (result != Z_OK)
     {
-        std::cerr << "Compression failed\n";
+        cerr << "Compression failed\n";
         return "";
     }
     compressedData.resize(compressedSize);
     return compressedData;
 }
 
-string fromHex(const std::string &hexStr)
+string fromHex(const string &hexStr)
 {
-    std::string result;
+    string result;
     for (size_t i = 0; i < hexStr.length(); i += 2)
     {
-        std::string byteStr = hexStr.substr(i, 2);
-        char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
+        string byteStr = hexStr.substr(i, 2);
+        char byte = static_cast<char>(stoi(byteStr, nullptr, 16));
         result += byte;
     }
     return result;
@@ -754,26 +749,26 @@ string fromHex(const std::string &hexStr)
 string getFormattedTimestamp()
 {
     // Get the current time
-    auto now = std::chrono::system_clock::now();
-    std::time_t unix_timestamp = std::chrono::system_clock::to_time_t(now);
+    auto now = chrono::system_clock::now();
+    time_t unix_timestamp = chrono::system_clock::to_time_t(now);
 
     // Get the local timezone offset in seconds
-    std::tm local_tm = *std::localtime(&unix_timestamp);
-    std::tm utc_tm = *std::gmtime(&unix_timestamp);
-    int offset_seconds = std::difftime(std::mktime(&local_tm), std::mktime(&utc_tm));
+    tm local_tm = *localtime(&unix_timestamp);
+    tm utc_tm = *gmtime(&unix_timestamp);
+    int offset_seconds = difftime(mktime(&local_tm), mktime(&utc_tm));
 
     // Calculate the offset in hours and minutes
     int offset_hours = offset_seconds / 3600;
-    int offset_minutes = std::abs(offset_seconds % 3600 / 60);
+    int offset_minutes = abs(offset_seconds % 3600 / 60);
 
     // Format the timezone offset
-    std::ostringstream offset_stream;
+    ostringstream offset_stream;
     offset_stream << (offset_hours >= 0 ? "+" : "-")                             // Sign
-                  << std::setw(2) << std::setfill('0') << std::abs(offset_hours) // Hours
-                  << std::setw(2) << std::setfill('0') << offset_minutes;        // Minutes
+                  << setw(2) << setfill('0') << abs(offset_hours) // Hours
+                  << setw(2) << setfill('0') << offset_minutes;        // Minutes
 
     // Combine Unix timestamp and timezone offset
-    std::ostringstream formatted_timestamp;
+    ostringstream formatted_timestamp;
     formatted_timestamp << unix_timestamp << " " << offset_stream.str();
 
     return formatted_timestamp.str();
