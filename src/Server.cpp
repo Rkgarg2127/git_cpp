@@ -521,34 +521,32 @@ string makePackFile(string packData)
 }
 
 string makePackIdxFile(const string packPath, const string idxPath) {
+    // Generate the idx file from the pack file
     string command = "git index-pack --stdin < " + packPath + " > " + idxPath;
     int result = system(command.c_str());
-    if(result!=0){
-        cerr<<"unable to create parse file with packPath:"<<packPath ;
+    
+    // Check if the command executed successfully
+    if (result != 0) {
+        cerr << "Unable to create parse file with packPath: " << packPath << endl;
         return "";
     }
 
-    // Create an ifstream object to read the file
-    ifstream inputFile(idxPath);
-
-    // Check if the file is open
+    // Open the .idx file for reading
+    ifstream inputFile(idxPath, ios::in | ios::binary);
     if (!inputFile.is_open()) {
         cerr << "Error opening file: " << idxPath << endl;
-        return ""; // return non-zero value to indicate failure
+        return ""; // Return empty string if file opening fails
     }
 
-    string line;
-    string idxFileContent;
-    // Read file line by line
-    while (getline(inputFile, line)) {
-        idxFileContent+= line+'\n'; // print each line
-    }
+    // Read the file content into a string
+    stringstream buffer;
+    buffer << inputFile.rdbuf();  // Read the entire file into the buffer
+    string idxFileContent = buffer.str();
 
-    // Close the file when done
+    // Close the file after reading
     inputFile.close();
     return idxFileContent;
 }
-
 string readBlob(string file_address)
 {
 
