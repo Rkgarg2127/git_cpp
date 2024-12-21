@@ -27,20 +27,22 @@ string generateSHA1(const std::string &input);
 string fromHex(const std::string &hexStr);
 string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
-pair<string,string> curl_request(string repo_url);
+pair<string, string> curl_request(string repo_url);
+string makePackFile(string packData);
 
-
-std::string decompressString(const std::string& compressed) {
+std::string decompressString(const std::string &compressed)
+{
     // Initialize the zlib stream
     z_stream strm;
     strm.zalloc = Z_NULL;
     strm.zfree = Z_NULL;
     strm.opaque = Z_NULL;
-    strm.avail_in = compressed.size();                 // Input size
-    strm.next_in = (Bytef*)compressed.data();          // Input data
+    strm.avail_in = compressed.size();         // Input size
+    strm.next_in = (Bytef *)compressed.data(); // Input data
 
     // Initialize decompression
-    if (inflateInit(&strm) != Z_OK) {
+    if (inflateInit(&strm) != Z_OK)
+    {
         throw std::runtime_error("Failed to initialize zlib");
     }
 
@@ -51,13 +53,15 @@ std::string decompressString(const std::string& compressed) {
 
     // Decompress data
     int ret;
-    do {
+    do
+    {
         strm.avail_out = bufferSize;
-        strm.next_out = reinterpret_cast<Bytef*>(buffer);
+        strm.next_out = reinterpret_cast<Bytef *>(buffer);
 
         ret = inflate(&strm, Z_NO_FLUSH);
 
-        if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR) {
+        if (ret != Z_OK && ret != Z_STREAM_END && ret != Z_BUF_ERROR)
+        {
             inflateEnd(&strm);
             throw std::runtime_error("Decompression failed");
         }
@@ -111,12 +115,7 @@ int main(int argc, char *argv[])
             cerr << "Invalid or Absent flag, required '-p <blob sha>'\n";
             return EXIT_FAILURE;
         }
-        const string value = argv[3];
-        const string dir_name = value.substr(0, 2);
-        const string blob_sha = value.substr(2);
-        const string file_address = ".git/objects/" + dir_name + "/" + blob_sha;
-
-        string result = readBlob(file_address);
+        string result = catFile(argv[3]);
         cout << result;
     }
     else if (command == "hash-object")
@@ -265,58 +264,77 @@ bool gitClone(string repo_url, string directory_name)
     }
 
     // making a request to get the pack file
-    pair<string,string> packpair = curl_request(repo_url);
-    string pack= packpair.first;
-    string packHash= packpair.second;
-    if(pack=="" || packHash==""){
+    pair<string, string> packpair = curl_request(repo_url);
+    string pack = packpair.first;
+    string packHash = packpair.second;
+    if (pack == "" || packHash == "")
+    {
         return false;
     }
-    cout<<"packhash:"<<packHash<<endl;
+    cout << "packhash:" << packHash << endl;
     // //packHash: 003f47b37f1a82bfe85f6d8df52b6258b75e4343b7fd refs/heads/master
     // //pack:0008NAK
     //      PACKS��r"�]a�a�......   //binary Data  https://github.com/git/git/blob/795ea8776befc95ea2becd8020c7a284677b4161/Documentation/gitformat-pack.txt
 
-    //parsing the pack file
+    string  fdb= makePackFile(pack.substr(4));
+    cout<<fdb<<endl;
+    // parsing the pack file
     int versionNumber = 0;
-    for(int i=8 ; i<16;i++){
-        versionNumber = versionNumber*256 + (unsigned char)pack[i];
+    for (int i = 8; i < 16; i++)
+    {
+        versionNumber = versionNumber * 256 + (unsigned char)pack[i];
     }
     int numberOfObjects = 0;
-    for(int i=16 ; i<20;i++){
-        numberOfObjects = numberOfObjects*256 + (unsigned char)pack[i];
+    for (int i = 16; i < 20; i++)
+    {
+        numberOfObjects = numberOfObjects * 256 + (unsigned char)pack[i];
     }
 
-    cout<<versionNumber<<" "<<numberOfObjects<<endl;
-    int countObject=0, packiterartor=20;
-    while(countObject<numberOfObjects){
-        int objectType = (((unsigned char)pack[packiterartor])&112)>>4; // 112 = 01110000
+    cout << versionNumber << " " << numberOfObjects << endl;
+    int countObject = 0, packiterartor = 20;
+    while (countObject < numberOfObjects)
+    {
 
-        //Calculating size of object
-        int objectSize = ((unsigned char)pack[packiterartor])&15; // 15 = 00001111
-        while(pack[packiterartor]& 128){
+        int objectType = (((unsigned char)pack[packiterartor]) & 112) >> 4; // 112 = 01110000
+
+        // Calculating size of object
+        int objectSize = ((unsigned char)pack[packiterartor]) & 15; // 15 = 00001111
+        while (pack[packiterartor] & 128)
+        {
             packiterartor++;
-            objectSize = objectSize*128 + ((unsigned char)pack[packiterartor]&127);
+            objectSize = objectSize * 128 + ((unsigned char)pack[packiterartor] & 127);
         }
-        objectSize = objectSize*128 + ((unsigned char)pack[packiterartor]&127);
+        objectSize = objectSize * 128 + ((unsigned char)pack[packiterartor] & 127);
         packiterartor++;
-        
 
-        if(objectType==6){
-            cout<<"refrence delta"<<endl;
+        if (objectType == 6)
+        {
+            cout << "refrence delta" << endl;
         }
-        else if(objectType==7){
-            cout<<"ofs delta"<<endl;
+        else if (objectType == 7)
+        {
+            cout << "ofs delta" << endl;
+            string baseObjectHash = pack.substr(packiterartor, 20);
+            packiterartor += 20;
+            string baseObjectContent = catFile(baseObjectHash);
+            string baseObjectType = baseObjectContent.substr(0, baseObjectContent.find(' '));
+            string baseObjectSize = baseObjectContent.substr(baseObjectContent.find(' ') + 1, baseObjectContent.find('\0') - baseObjectContent.find(' ') - 1);
+            if (baseObjectType)
         }
-        else if(objectType==5){
-            cout<<"undefined object type"<<endl;
+        else if (objectType == 5)
+        {
+            cout << "undefined object type" << endl;
         }
-        else{
-            cout<<"object type: "<<objectType<<endl;
-            string objectTypeName= (objectType==1)?"commit":(objectType==2)?"tree":(objectType==3)?"blob":"tag";
-            string dec= decompressString(pack.substr(packiterartor)) ;
-            packiterartor+= (compressedString(dec).size());
-            cout<<dec<<endl;
-            makeCompressedObject(objectTypeName+to_string(dec.size())+'\0'+dec);
+        else
+        {
+            cout << "object type: " << objectType << endl;
+            string objectTypeName = (objectType == 1) ? "commit" : (objectType == 2) ? "tree"
+                                                               : (objectType == 3)   ? "blob"
+                                                                                     : "tag";
+            string dec = decompressString(pack.substr(packiterartor));
+            packiterartor += (compressedString(dec).size());
+            cout << dec << endl;
+            makeCompressedObject(objectTypeName + to_string(dec.size()) + '\0' + dec);
         }
     }
 
@@ -329,11 +347,12 @@ size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
     return size * nmemb;
 }
 
-pair<string,string> curl_request(string repo_url){
+pair<string, string> curl_request(string repo_url)
+{
     curl_global_init(CURL_GLOBAL_DEFAULT);
     CURL *curl = curl_easy_init();
 
-    string readBuffer,masterHash;
+    string readBuffer, masterHash;
     string pack; // to store the pack data
     if (curl)
     {
@@ -354,16 +373,15 @@ pair<string,string> curl_request(string repo_url){
             // Cleanup
             curl_easy_cleanup(curl);
             curl_global_cleanup();
-            return {"",""};
+            return {"", ""};
         }
 
-        //Expected Response data: 001e# service=git-upload-pack
-        //0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
-        //003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
+        // Expected Response data: 001e# service=git-upload-pack
+        // 0000015523f0bc3b5c7c3108e41c448f01a3db31e7064bbb HEADlta shallow deepen-since deepen-not deepen-relative no-progress include-tag multi_ack_detailed allow-tip-sha1-in-want allow-reachable-sha1-in-want no-done symref=HEAD:refs/heads/master filter object-format=sha1 agent=git/github-395dce4f6ecf
+        // 003f23f0bc3b5c7c3108e41c448f01a3db31e7064bbb refs/heads/master
 
-        //pasring readbuffer for packHash
-        // spliting the response into lines
-        
+        // pasring readbuffer for packHash
+        //  spliting the response into lines
 
         // To do some response check conditions
         // // Clients MUST validate the first five bytes of the response entity matches the regex ^[0-9a-f]{4}#. If this test fails, clients MUST NOT continue.
@@ -371,31 +389,29 @@ pair<string,string> curl_request(string repo_url){
         // // Clients MUST verify the first pkt-line is # service=$servicename. Servers MUST set $servicename to be the request parameter value. Servers SHOULD include an LF at the end of this line. Clients MUST ignore an LF at the end of the line.
         // // Servers MUST terminate the response with the magic 0000 end pkt-line marker.
 
-        //Rrsetting curl for next curl
+        // Rrsetting curl for next curl
         curl_easy_reset(curl);
 
         // MAking a request to get the pack file
         // fetch git-upload-pack
 
-
         // Making the post request data
         size_t position = readBuffer.find("refs/heads/master\n");
-        masterHash = readBuffer.substr(position - 41, 40);//hashcode extraction
-        string postData= "0032want " + masterHash+ "\n"+ "00000009done\n";
+        masterHash = readBuffer.substr(position - 41, 40); // hashcode extraction
+        string postData = "0032want " + masterHash + "\n" + "00000009done\n";
 
         // Doing the post request
         curl_easy_setopt(curl, CURLOPT_URL, (repo_url + "/git-upload-pack").c_str());
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA,(void*) &pack);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&pack);
         struct curl_slist *headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/x-git-upload-pack-request");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         // Perform the request
         res = curl_easy_perform(curl);
-        //output pack is binary string
-
+        // output pack is binary string
 
         if (res != CURLE_OK)
         {
@@ -403,12 +419,11 @@ pair<string,string> curl_request(string repo_url){
             // Cleanup
             curl_easy_cleanup(curl);
             curl_global_cleanup();
-            return {"",""};
+            return {"", ""};
         }
 
         // Cleanup
         curl_easy_cleanup(curl);
-
     }
 
     curl_global_cleanup();
@@ -449,6 +464,49 @@ bool init(string dir)
     }
 }
 
+string catFile(string hash)
+{
+    const string value = hash;
+    const string dir_name = value.substr(0, 2);
+    const string blob_sha = value.substr(2);
+    const string file_address = ".git/objects/" + dir_name + "/" + blob_sha;
+
+    string result = readBlob(file_address);
+    return result;
+}
+
+string makePackFile(string packData)
+{
+    // compressing content
+    string compressedData = compressedString(packData);
+    if (compressedData == "")
+    {
+        cout << "empty compressedData";
+        return "";
+    }
+
+    string sha_hash = generateSHA1(packData);
+
+    string dir = ".git/objects/pack";
+    if (!filesystem::exists(dir))
+    {
+        if (filesystem::create_directory(dir))
+        {
+            // cout << "Directory created\n";
+        }
+        else
+        {
+            cout << "Failed to create directory\n";
+            return false;
+        }
+    }
+
+    string file_address = dir + "/" + sha_hash;
+    ofstream objectFile(file_address, ios::binary);
+    objectFile.write(compressedData.c_str(), compressedData.size());
+    objectFile.close();
+    return sha_hash;
+}
 string readBlob(string file_address)
 {
 
@@ -635,17 +693,17 @@ string compressedString(string data)
     return compressedData;
 }
 
-string fromHex(const std::string &hexStr)
-{
-    std::string result;
-    for (size_t i = 0; i < hexStr.length(); i += 2)
-    {
-        std::string byteStr = hexStr.substr(i, 2);
-        char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
-        result += byte;
-    }
-    return result;
-}
+// string fromHex(const std::string &hexStr)
+// {
+//     std::string result;
+//     for (size_t i = 0; i < hexStr.length(); i += 2)
+//     {
+//         std::string byteStr = hexStr.substr(i, 2);
+//         char byte = static_cast<char>(std::stoi(byteStr, nullptr, 16));
+//         result += byte;
+//     }
+//     return result;
+// }
 
 string getFormattedTimestamp()
 {
