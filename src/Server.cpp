@@ -286,7 +286,7 @@ bool gitClone(string repo_url, string directory_name)
         return false;
     }
 
-    string packIdxContent= makePackIdxFile(".git/objects/pack/" + packHash + ".pack", ".git/objects/pack/" + packHash + ".idx");
+    string packIdxContent= makePackIdxFile(".git/objects/pack/pack-" + packHash + ".pack", ".git/objects/pack/pack-" + packHash + ".idx");
     cout<<"packIdxContent"<<packIdxContent<<endl;
     return 0;
     // parsing the pack file
@@ -513,7 +513,7 @@ string makePackFile(string packData)
             return "";
         }
     }
-    string file_address = dir + "/" + sha_hash+".pack";
+    string file_address = dir + "/pack-" + sha_hash+".pack";
     ofstream objectFile(file_address, ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
