@@ -286,6 +286,8 @@ bool gitClone(string repo_url, string directory_name)
 
     string packIdxContent= fetchPackIdx(repo_url, packHash);
     cout<<"packIdxContent: "<<packIdxContent<<endl;
+    packIdxContent= fetchPackIdx(repo_url,masterCommitHash);
+    cout<<"packIdxContent: "<<packIdxContent<<endl;
     // parsing the pack file
     int versionNumber = 0;
     for (int i = 8; i < 16; i++)
