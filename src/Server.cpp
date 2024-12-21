@@ -30,7 +30,7 @@ string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
 pair<string, string> curl_request(string repo_url);
 string makePackFile(string packData);
-string makePackIdxFile(const string& packPath, const string& idxPath) ;
+string makePackIdxFile(const string packPath, const string idxPath) ;
 
 
 
@@ -285,7 +285,7 @@ bool gitClone(string repo_url, string directory_name)
         return false;
     }
 
-    string packIdxContent= makePackIdxFile(".git/objects/pack" + "/" + packHash+".pack", ".git/objects/pack" + "/" + packHash+".idx");
+    string packIdxContent= makePackIdxFile(".git/objects/pack/" + packHash + ".pack", ".git/objects/pack/" + packHash + ".idx");
     cout<<"packIdxContent"<<packIdxContent<<endl;
     return 0;
     // parsing the pack file
@@ -519,7 +519,7 @@ string makePackFile(string packData)
     return sha_hash;
 }
 
-string makePackIdxFile(const string& packPath, const string& idxPath) {
+string makePackIdxFile(const string packPath, const string idxPath) {
     string command = "git index-pack --stdin < " + packPath + " > " + idxPath;
     int result = system(command.c_str());
     if(result!=0){
