@@ -30,6 +30,8 @@ string getFormattedTimestamp();
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp);
 pair<string, string> curl_request(string repo_url);
 string makePackFile(string packData);
+string fetchPackIdx(const string& repoUrl, const string& packHash);
+
 
 std::string decompressString(const std::string &compressed)
 {
@@ -281,6 +283,9 @@ bool gitClone(string repo_url, string directory_name)
     if(packHash==""){
         return false;
     }
+
+    string packIdxContent= fetchPackIdx(repo_url, packHash);
+    cout<<"packIdxContent: "<<packIdxContent<<endl;
     // parsing the pack file
     int versionNumber = 0;
     for (int i = 8; i < 16; i++)
@@ -343,6 +348,40 @@ bool gitClone(string repo_url, string directory_name)
     }
 
     return true;
+}
+
+string fetchPackIdx(const string& repoUrl, const string& packHash) {
+    CURL* curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (!curl) {
+        cerr << "Failed to initialize CURL." << endl;
+        return "";
+    }
+
+    string idxData;
+    // Construct the URL for the .idx file
+    string idxUrl = repoUrl + "/objects/pack/pack-" + packHash + ".idx";
+    cout << "Fetching .idx from: " << idxUrl << endl;
+
+    // Set CURL options
+    curl_easy_setopt(curl, CURLOPT_URL, idxUrl.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, idxData);
+
+    // Perform the request
+    res = curl_easy_perform(curl);
+
+    // Check for errors
+    if (res != CURLE_OK) {
+        cerr << "CURL error: " << curl_easy_strerror(res) << endl;
+        curl_easy_cleanup(curl);
+        return "";
+    }
+
+    // Clean up
+    curl_easy_cleanup(curl);
+    return idxData;
 }
 
 size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp)
@@ -468,8 +507,7 @@ bool init(string dir)
     }
 }
 
-string catFile(string hash)
-{
+string catFile(string hash){
     const string value = hash;
     const string dir_name = value.substr(0, 2);
     const string blob_sha = value.substr(2);
@@ -496,7 +534,7 @@ string makePackFile(string packData)
     {
         if (filesystem::create_directories(dir))
         {
-            cout << "Directory created\n";
+            // cout << "Directory created\n";
         }
         else
         {
@@ -504,13 +542,13 @@ string makePackFile(string packData)
             return "";
         }
     }
-    cout<<"bhbhgvghgftygbb htouiuiokjkl"<<endl;
     string file_address = dir + "/" + sha_hash;
     ofstream objectFile(file_address, ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
     objectFile.close();
     return sha_hash;
 }
+
 string readBlob(string file_address)
 {
 
