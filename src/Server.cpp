@@ -501,7 +501,7 @@ string makePackFile(string packData)
             return "";
         }
     }
-    cout<<"bhbhgvghgftygbb htouiuiokjkl"<<endl
+    cout<<"bhbhgvghgftygbb htouiuiokjkl"<<endl;
     string file_address = dir + "/" + sha_hash;
     ofstream objectFile(file_address, ios::binary);
     objectFile.write(compressedData.c_str(), compressedData.size());
